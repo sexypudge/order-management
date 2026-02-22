@@ -13,6 +13,9 @@ import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -33,8 +36,23 @@ public class UserServiceImpl implements UserService {
 
         Role customerRole = roleRepository.findByName(UserRole.CUSTOMER).orElseThrow(() -> new RuntimeException("Customer role has not been initialized"));
         user.getRoles().add(customerRole);
+        User save = userRepository.save(user);
 
-        userRepository.save(user);
-        return createUser(userRequest);
+        return responseDTO(save);
+    }
+
+    private UserResponse responseDTO(User user) {
+        return UserResponse.builder().id(user.getId())
+                .userName(user.getUserName())
+                .status(user.getStatus().name())
+                .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public List<UserResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream().map(this::responseDTO).collect(Collectors.toList());
     }
 }
