@@ -13,7 +13,6 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID) // Tự động tạo mã chuỗi không trùng lặp
     private String id;
-
     private String username;
     private String password;
     private String status;
