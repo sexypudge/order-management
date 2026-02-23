@@ -8,6 +8,7 @@ import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.stereotype.Service;
+import org.example.ordermanagement.exception.BusinessException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("User already exists!");
+            throw new BusinessException("USER_ALREADY_EXISTS", "User already exists!");
         }
 
         User user = new User();
