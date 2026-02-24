@@ -7,6 +7,8 @@ spring:
     username: root
     password: 0801
     driver-class-name: com.mysql.cj.jdbc.Driver
+  profiles:
+    active: dev
 
   jpa:
     hibernate:

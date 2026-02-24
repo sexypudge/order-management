@@ -6,7 +6,7 @@ import org.example.ordermanagement.common.enums.ErrCode;
 public class AppException extends RuntimeException{
     private ErrCode errCode;
 
-    AppException (ErrCode errCode){
+    public AppException (ErrCode errCode){
         super(errCode.getMessage());
         this.errCode =errCode;
     }

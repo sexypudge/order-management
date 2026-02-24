@@ -2,8 +2,10 @@ package org.example.ordermanagement.service.implement;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.ordermanagement.common.enums.ErrCode;
 import org.example.ordermanagement.common.enums.UserRole;
 import org.example.ordermanagement.common.enums.UserStatus;
+import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.UserRequest;
@@ -25,16 +27,16 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
-        if (userRepository.findByUserName(userRequest.getUserName()).isPresent()) {
-            throw new RuntimeException("User already exists!");
+        if (userRepository.findByUsername(userRequest.getUsername()).isPresent()) {
+            throw new RuntimeException(ErrCode.USER_EXISTED.getMessage());
         }
         User user = new User();
-        user.setUserName(user.getUserName());
-        user.setPassword(user.getPassword());
+        user.setUsername(userRequest.getUsername());
+        user.setPassword(userRequest.getPassword());
 
         user.setStatus(UserStatus.ACTIVE);
 
-        Role customerRole = roleRepository.findByName(UserRole.CUSTOMER).orElseThrow(() -> new RuntimeException("Customer role has not been initialized"));
+        Role customerRole = roleRepository.findByName(UserRole.CUSTOMER).orElseThrow(() -> new AppException(ErrCode.ROLE_NOT_FOUND));
         user.getRoles().add(customerRole);
         User save = userRepository.save(user);
 
@@ -43,7 +45,7 @@ public class UserServiceImpl implements UserService {
 
     private UserResponse responseDTO(User user) {
         return UserResponse.builder().id(user.getId())
-                .userName(user.getUserName())
+                .username(user.getUsername())
                 .status(user.getStatus().name())
                 .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
                 .build();

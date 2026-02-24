@@ -12,14 +12,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping
-    ApiResponse<UserResponse> create(@RequestBody @Validated UserRequest userRequest) {
+    ApiResponse<UserResponse> create(@RequestBody UserRequest userRequest) {
         return ApiResponse.<UserResponse>builder()
                 .ResCode(1000)
                 .message("Successfully created user!")
