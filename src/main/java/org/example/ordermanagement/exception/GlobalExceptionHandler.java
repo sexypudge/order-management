@@ -11,16 +11,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
-    ResponseEntity<ApiResponse>HandleRuntimeException(RuntimeException exception){
-        ApiResponse apiResponse= new ApiResponse<>();
+    public ResponseEntity<ApiResponse<?>>HandleRuntimeException(RuntimeException exception){
+        ApiResponse<?> apiResponse= new ApiResponse<>();
         apiResponse.setCode(ErrCode.UNCATEGORIZED_EXCEPTION.getCode());
         apiResponse.setMessage(ErrCode.UNCATEGORIZED_EXCEPTION.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
     }
 
     @ExceptionHandler(value = AppException.class)
-    ResponseEntity<ApiResponse>HandleAppException(AppException exception){
-        ApiResponse apiResponse = new ApiResponse();
+    public ResponseEntity<ApiResponse<?>>HandleAppException(AppException exception){
+        ApiResponse<?> apiResponse = new ApiResponse();
         ErrCode errCode = exception.getErrCode();
         apiResponse.setCode(errCode.getCode());
         apiResponse.setMessage(errCode.getMessage());
