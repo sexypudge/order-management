@@ -1,4 +1,4 @@
-package org.example.ordermanagement.common;
+package org.example.ordermanagement.util;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
