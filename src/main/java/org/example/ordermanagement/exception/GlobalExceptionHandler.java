@@ -13,17 +13,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     ResponseEntity<ApiResponse>HandleRuntimeException(RuntimeException exception){
         ApiResponse apiResponse= new ApiResponse<>();
-        apiResponse.setResCode(ErrCode.UNCATEGORIZED_EXCEPTION.getCode());
+        apiResponse.setCode(ErrCode.UNCATEGORIZED_EXCEPTION.getCode());
         apiResponse.setMessage(ErrCode.UNCATEGORIZED_EXCEPTION.getMessage());
-        return ResponseEntity.badRequest().body(apiResponse);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
     }
 
     @ExceptionHandler(value = AppException.class)
     ResponseEntity<ApiResponse>HandleAppException(AppException exception){
         ApiResponse apiResponse = new ApiResponse();
         ErrCode errCode = exception.getErrCode();
-        apiResponse.setResCode(errCode.getCode());
+        apiResponse.setCode(errCode.getCode());
         apiResponse.setMessage(errCode.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiResponse);
+        return ResponseEntity.status(errCode.getStatusCode()).body(apiResponse);
     }
 }
