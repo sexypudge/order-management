@@ -1,8 +1,13 @@
 package org.example.ordermanagement.service.impl;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.example.ordermanagement.domain.User;
 import org.example.ordermanagement.dto.request.UserRequest;
 import org.example.ordermanagement.dto.response.UserResponse;
 import org.example.ordermanagement.exception.AppException;
+import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.stereotype.Service;
 
@@ -11,8 +16,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
-
+    UserRepository userRepository;
     // nơi chứa dữ liệu thay cho database
     private List<UserResponse> storage = new ArrayList<>();
 
@@ -22,20 +29,37 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse createUser(UserRequest request) {
-        // test exception
-        if ("admin".equalsIgnoreCase(request.getUsername())) {
+    public UserResponse getUserById(String id) {
+        // tìm user trong db nếu không thấy thì ném lỗi
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException("USER_NOT_EXISTED", "Không tìm thấy người dùng này"));
 
-            throw new AppException("USER_INVALID", "Không được phép đặt tên người dùng là admin!");
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .status(user.getStatus())
+                .build();
+    }
+
+    @Override
+    public UserResponse createUser(UserRequest request) {
+        //  kiểm tra xem username đã tồn tại chưa
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new AppException("USER_EXISTED", "người dùng đã tồn tại ");
         }
-        //  nếu không phải admin thì vẫn tạo user bình thường
-        UserResponse newUser = UserResponse.builder()
-                .id(UUID.randomUUID().toString())
+
+        User user = User.builder()
                 .username(request.getUsername())
+                .password(request.getPassword())
                 .status("ACTIVE")
                 .build();
 
-        storage.add(newUser);
-        return newUser;
+        //  Lưu vào Database
+        user = userRepository.save(user);
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .build();
     }
 }
