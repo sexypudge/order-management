@@ -6,7 +6,7 @@ import org.example.ordermanagement.util.ResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.example.ordermanagement.model.dto.response.UserResponse;
 import java.util.Map;
 
 @RestController
@@ -28,5 +28,10 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> createUser(@RequestBody CreateUserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtil.success(userService.createUser(request)));
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long id) {
+        UserResponse user = userService.getUserById(id);
+        return ResponseEntity.ok(ResponseUtil.success(user));
     }
 }

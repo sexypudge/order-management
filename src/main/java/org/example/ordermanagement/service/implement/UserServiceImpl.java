@@ -11,7 +11,7 @@ import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.stereotype.Service;
-
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,6 +54,14 @@ public class UserServiceImpl implements UserService {
 
         User saved = userRepository.save(user);
         return toResponse(saved);
+    }
+    @Override
+    public UserResponse getUserById(Long id) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isEmpty()) {
+            throw new BusinessException("USER_NOT_FOUND", "User not found");
+        }
+        return toResponse(user.get());
     }
 
     private UserResponse toResponse(User user) {

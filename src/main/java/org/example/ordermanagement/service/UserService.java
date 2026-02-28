@@ -8,4 +8,5 @@ import java.util.List;
 public interface UserService {
     List<UserResponse> getUsers();
     UserResponse createUser(CreateUserRequest request);
+    UserResponse getUserById(Long id);
 }
