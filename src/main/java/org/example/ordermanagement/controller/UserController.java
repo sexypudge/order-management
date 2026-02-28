@@ -32,6 +32,16 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping("/{id")
+    ResponseEntity<ApiResponse<UserResponse>>getUser(@PathVariable Long id){
+        ApiResponse<UserResponse> response= ApiResponse.<UserResponse>builder()
+                .code(1000)
+                .message("Successfully get information of user!")
+                .result(userService.getUserById(id))
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @GetMapping
     ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
         ApiResponse<List<UserResponse>> response = ApiResponse.<List<UserResponse>>builder()

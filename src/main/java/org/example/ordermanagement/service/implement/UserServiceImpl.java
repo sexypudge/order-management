@@ -13,6 +13,7 @@ import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
         if (userRepository.findByUsername(userRequest.getUsername()).isPresent()) {
-            throw new RuntimeException(ErrCode.USER_EXISTED.getMessage());
+            throw new AppException(ErrCode.USER_EXISTED);
         }
         User user = new User();
         user.setUsername(userRequest.getUsername());
@@ -43,12 +44,10 @@ public class UserServiceImpl implements UserService {
         return responseDTO(save);
     }
 
-    private UserResponse responseDTO(User user) {
-        return UserResponse.builder().id(user.getId())
-                .username(user.getUsername())
-                .status(user.getStatus().name())
-                .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
-                .build();
+    public UserResponse getUserById(Long id){
+        User user = userRepository.findById(id)
+                .orElseThrow(()-> new AppException(ErrCode.USER_NOT_EXISTED));
+        return responseDTO(user);
     }
 
     @Override
@@ -56,5 +55,13 @@ public class UserServiceImpl implements UserService {
     public List<UserResponse> getAllUsers() {
         List<User> users = userRepository.findAll();
         return users.stream().map(this::responseDTO).collect(Collectors.toList());
+    }
+
+    private UserResponse responseDTO(User user) {
+        return UserResponse.builder().id(user.getId())
+                .username(user.getUsername())
+                .status(user.getStatus().name())
+                .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
+                .build();
     }
 }
