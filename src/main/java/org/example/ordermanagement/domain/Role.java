@@ -2,16 +2,19 @@ package org.example.ordermanagement.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 import org.example.ordermanagement.common.enums.RoleName;
 
 @Entity
 @Table(name = "roles")
-@Getter @Setter
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Role {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Integer id;
 
     @Enumerated(EnumType.STRING)
-    private RoleName name;
+    @Column(unique = true, nullable = false)
+    RoleName name;
 }

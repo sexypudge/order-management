@@ -6,6 +6,9 @@ import org.example.ordermanagement.common.enums.UserStatus;
 import java.util.HashSet;
 import java.util.Set;
 
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "users")
 @Getter @Setter
