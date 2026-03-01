@@ -88,6 +88,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public PageResponse<UserSearchResponse> searchUsers(UserSearchRequest request, int page, int size, String sortBy, String sortDirection) {
 
+        if (page < 0) {
+            throw new BusinessException("INVALID_REQUEST", "Page must be >= 0");
+        }
         if (sortBy == null || sortBy.isBlank()) sortBy = "id";
         if (sortDirection == null || sortDirection.isBlank()) sortDirection = "ASC";
 
@@ -114,13 +117,7 @@ public class UserServiceImpl implements UserService {
         Long id = null;
         String name = null;
 
-        if (request != null) {
-            id = request.getId();
-            name = request.getName();
-            if (name != null && name.isBlank()) {
-                name = null;
-            }
-        }
+
 
         Page<User> userPage = userRepository.searchUsers(id, name, pageable);
 
