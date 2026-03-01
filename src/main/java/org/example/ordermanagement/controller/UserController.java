@@ -6,7 +6,10 @@ import org.example.ordermanagement.util.ResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.example.ordermanagement.model.dto.response.UserResponse;
+import org.example.ordermanagement.model.dto.request.UserSearchRequest;
+import org.example.ordermanagement.model.dto.response.UserSearchResponse;
+import org.example.ordermanagement.model.dto.response.PageResponse;
 import java.util.Map;
 
 @RestController
@@ -28,5 +31,21 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> createUser(@RequestBody CreateUserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtil.success(userService.createUser(request)));
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long id) {
+        UserResponse user = userService.getUserById(id);
+        return ResponseEntity.ok(ResponseUtil.success(user));
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchUsers(@RequestBody UserSearchRequest request,
+                                                           @RequestParam(defaultValue = "0") int page,
+                                                           @RequestParam(defaultValue = "10") int size,
+                                                           @RequestParam(defaultValue = "id") String sortBy,
+                                                           @RequestParam(defaultValue = "ASC") String sortDirection) {
+        return ResponseEntity.ok(
+                ResponseUtil.success(userService.searchUsers(request, page, size, sortBy, sortDirection))
+        );
     }
 }
