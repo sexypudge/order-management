@@ -38,7 +38,6 @@ public class UserController {
                 .build();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-
     @GetMapping
     ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
         ApiResponse<List<UserResponse>> response = ApiResponse.<List<UserResponse>>builder()

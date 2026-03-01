@@ -16,7 +16,9 @@ import org.example.ordermanagement.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,14 +36,11 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setUsername(userRequest.getUsername());
         user.setPassword(userRequest.getPassword());
-
         user.setStatus(UserStatus.ACTIVE);
 
-        Role customerRole = roleRepository.findByName(UserRole.CUSTOMER).orElseThrow(() -> new AppException(ErrCode.ROLE_NOT_FOUND));
-        user.getRoles().add(customerRole);
-        User save = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        return responseDTO(save);
+        return responseDTO(savedUser);
     }
 
     public UserResponse getUserById(Long id){
@@ -55,6 +54,16 @@ public class UserServiceImpl implements UserService {
     public List<UserResponse> getAllUsers() {
         List<User> users = userRepository.findAll();
         return users.stream().map(this::responseDTO).collect(Collectors.toList());
+    }
+    @Override
+    @Transactional
+    public UserResponse assignRolesToUser(Long userId, Set<String> roleNames){
+        User user = userRepository.findById(userId).orElseThrow(()-> new AppException(ErrCode.USER_NOT_EXISTED));
+        Set<Role> roles = new HashSet<>(roleRepository.findByName(roleNames.toString()));
+
+        user.setRoles(roles);
+
+        return responseDTO(userRepository.save(user));
     }
 
     private UserResponse responseDTO(User user) {
