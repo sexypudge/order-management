@@ -11,6 +11,14 @@ import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.stereotype.Service;
+
+import org.example.ordermanagement.model.dto.request.UserSearchRequest;
+import org.example.ordermanagement.model.dto.response.PageResponse;
+import org.example.ordermanagement.model.dto.response.UserSearchResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,5 +84,62 @@ public class UserServiceImpl implements UserService {
                 user.getStatus(),
                 roles
         );
+    }
+    @Override
+    public PageResponse<UserSearchResponse> searchUsers(UserSearchRequest request, int page, int size, String sortBy, String sortDirection) {
+
+        if (sortBy == null || sortBy.isBlank()) sortBy = "id";
+        if (sortDirection == null || sortDirection.isBlank()) sortDirection = "ASC";
+
+        String sortField;
+        if (sortBy.equalsIgnoreCase("id")) {
+            sortField = "id";
+        } else if (sortBy.equalsIgnoreCase("name")) {
+            sortField = "username";
+        } else {
+            throw new BusinessException("INVALID_REQUEST", "sortBy must be id or name");
+        }
+
+        Sort.Direction direction;
+        if (sortDirection.equalsIgnoreCase("ASC")) {
+            direction = Sort.Direction.ASC;
+        } else if (sortDirection.equalsIgnoreCase("DESC")) {
+            direction = Sort.Direction.DESC;
+        } else {
+            throw new BusinessException("INVALID_REQUEST", "sortDirection must be ASC or DESC");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+
+        Long id = null;
+        String name = null;
+
+        if (request != null) {
+            id = request.getId();
+            name = request.getName();
+            if (name != null && name.isBlank()) {
+                name = null;
+            }
+        }
+
+        Page<User> userPage = userRepository.searchUsers(id, name, pageable);
+
+        List<UserSearchResponse> content = new ArrayList<>();
+        for (User u : userPage.getContent()) {
+            content.add(new UserSearchResponse(u.getId(), u.getUsername()));
+        }
+
+        PageResponse<UserSearchResponse> res = new PageResponse<>();
+        res.setContent(content);
+        res.setPage(userPage.getNumber());
+        res.setSize(userPage.getSize());
+        res.setTotalElements(userPage.getTotalElements());
+        res.setTotalPages(userPage.getTotalPages());
+        res.setHasNext(userPage.hasNext());
+        res.setHasPrevious(userPage.hasPrevious());
+        res.setSortBy(sortBy.toLowerCase());
+        res.setSortDirection(direction.name());
+
+        return res;
     }
 }
