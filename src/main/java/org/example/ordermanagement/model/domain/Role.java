@@ -1,13 +1,12 @@
 package org.example.ordermanagement.model.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jdk.jfr.Description;
+import lombok.*;
 import org.example.ordermanagement.common.enums.UserRole;
 
 @Entity
+@Builder
 @Table(name = "role")
 @Getter @Setter
 @NoArgsConstructor
