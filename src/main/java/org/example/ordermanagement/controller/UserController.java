@@ -1,9 +1,13 @@
 package org.example.ordermanagement.controller;
 
+import jakarta.validation.Valid;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.UserRequest;
+import org.example.ordermanagement.model.dto.request.UserSearchRequest;
 import org.example.ordermanagement.model.dto.response.ApiResponse;
+import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -11,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/users")
@@ -20,7 +25,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    ResponseEntity<ApiResponse<UserResponse>> create(@RequestBody UserRequest userRequest) {
+    public ResponseEntity<ApiResponse<UserResponse>> create(@RequestBody UserRequest userRequest) {
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
                 .code(1000)
                 .message("Successfully created user!")
@@ -30,21 +35,46 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<ApiResponse<UserResponse>>getUser(@PathVariable Long id){
-        ApiResponse<UserResponse> response= ApiResponse.<UserResponse>builder()
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable Long id) {
+        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
                 .code(1000)
                 .message("Successfully get information of user!")
                 .result(userService.getUserById(id))
                 .build();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    @GetMapping
-    ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
-        ApiResponse<List<UserResponse>> response = ApiResponse.<List<UserResponse>>builder()
+
+    @PostMapping("/{userId}/role")
+    public ResponseEntity<ApiResponse<UserResponse>> assignRoles(@PathVariable Long userId, @RequestBody Set<String> roleNames) {
+        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
                 .code(1000)
-                .message("Get information all users")
-                .result(userService.getAllUsers())
+                .message("Successfully assigned roles to user!")
+                .result(userService.assignRolesToUser(userId, roleNames))
                 .build();
-        return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+        return ResponseEntity.ok(response);
+
     }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> search(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestBody(required = false) @Valid UserSearchRequest userSearchRequest
+            ){
+        UserSearchRequest searchRequest;
+        if(userSearchRequest==null){
+            searchRequest = new UserSearchRequest();
+        }else {
+            searchRequest = userSearchRequest;
+        }
+        ApiResponse<PageResponse<UserResponse>> response= ApiResponse.<PageResponse<UserResponse>>builder()
+                .code(1000)
+                .message("Successfully listed users!")
+                .result(userService.searchUsers(page,size,sortBy,sortDirection,searchRequest))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
 }
