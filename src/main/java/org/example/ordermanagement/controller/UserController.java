@@ -3,6 +3,7 @@ package org.example.ordermanagement.controller;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.example.ordermanagement.dto.request.AssignRoleRequest;
 import org.example.ordermanagement.dto.request.UserRequest;
 import org.example.ordermanagement.dto.request.UserSearchRequest;
 import org.example.ordermanagement.dto.response.ApiResponse;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/users")
@@ -68,6 +70,18 @@ public class UserController {
         var result = userService.searchUsers(page, size, sortBy, sortDirection, request);
 
         return ApiResponse.<PageResponse<UserResponse>>builder()
+                .data(result)
+                .build();
+    }
+    @PutMapping("/{userId}/roles")
+    public ApiResponse<UserResponse> assignRoles(
+            @PathVariable Long userId,
+            @RequestBody Set<Integer> roleIds) {
+
+        var result = userService.assignRoles(userId, roleIds);
+
+        return ApiResponse.<UserResponse>builder()
+                .message("Cập nhật quyền thành công")
                 .data(result)
                 .build();
     }
