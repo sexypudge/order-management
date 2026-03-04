@@ -4,7 +4,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.ordermanagement.model.dto.request.UserRequest;
+import org.example.ordermanagement.model.dto.request.UserSearchRequest;
 import org.example.ordermanagement.model.dto.response.ApiResponse;
+import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -54,5 +56,19 @@ public class UserController {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+    @PostMapping("/search")
+    public ApiResponse<PageResponse<UserResponse>> searchUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestBody(required = false) UserSearchRequest request) {
+
+        var result = userService.searchUsers(page, size, sortBy, sortDirection, request);
+
+        return ApiResponse.<PageResponse<UserResponse>>builder()
+                .data(result)
+                .build();
     }
 }
