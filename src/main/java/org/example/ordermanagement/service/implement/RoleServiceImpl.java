@@ -8,12 +8,11 @@ import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.dto.request.RoleRequest;
 import org.example.ordermanagement.model.dto.response.RoleResponse;
 import org.example.ordermanagement.repository.RoleRepository;
-import org.example.ordermanagement.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class RoleService {
+public class RoleServiceImpl {
     private final RoleRepository roleRepository;
 
     public RoleResponse createRole(RoleRequest roleRequest) {

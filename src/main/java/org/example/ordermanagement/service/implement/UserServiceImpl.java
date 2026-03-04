@@ -59,35 +59,54 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse assignRolesToUser(Long userId, Set<String> roleNames) {
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
-        Set<Role> roles = new HashSet<>(roleRepository.findByName(roleNames.toString()));
+
+        Set<UserRole> enums = roleNames.stream()
+                .map(name -> UserRole.valueOf(name.toUpperCase()))
+                .collect(Collectors.toSet());
+
+        Set<Role> roles = roleRepository.findAllByNameIn(enums);
+
+        if (roles.isEmpty()) throw new AppException(ErrCode.ROLE_NOT_FOUND);
 
         user.setRoles(roles);
-
         return responseDTO(userRepository.save(user));
     }
 
     public PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest userSearchRequest) {
-        Sort sort = sortDirection.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        String actualField;
+        if (sortBy.equals("name")) {
+            actualField = "username";
+        } else {
+            actualField = sortBy;
+        }
+        Sort sort;
+        if (sortDirection.equalsIgnoreCase("ASC")) {
+            sort = Sort.by(actualField).ascending();
+        } else {
+            sort = Sort.by(actualField).descending();
+        }
+
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<User> userPage;
         if (userSearchRequest.getId() != null) {
             userPage = userRepository.findById(userSearchRequest.getId(), pageable);
         } else if (userSearchRequest.getName() != null && !userSearchRequest.getName().isEmpty()) {
-            userPage = userRepository.findByNameContaining(userSearchRequest.getName(), pageable);
+            userPage = userRepository.findByUsernameContaining(userSearchRequest.getName(), pageable);
         } else {
             userPage = userRepository.findAll(pageable);
         }
         return PageResponse.<UserResponse>builder()
                 .content(userPage.getContent().stream()
                         .map(user -> UserResponse.builder()
-                        .id(user.getId())
-                        .username(user.getUsername())
-                        .build())
+                                .id(user.getId())
+                                .username(user.getUsername())
+                                .status(user.getStatus().name())
+                                .build())
                         .toList())
                 .page(userPage.getNumber())
                 .size(userPage.getSize())
-                .totalElement(userPage.getTotalElements())
+                .totalElements(userPage.getTotalElements())
                 .totalPages(userPage.getTotalPages())
                 .hasNext(userPage.hasNext())
                 .hasPrevious(userPage.hasPrevious())

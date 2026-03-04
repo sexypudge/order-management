@@ -4,25 +4,28 @@ import jakarta.validation.Valid;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.model.domain.User;
+import org.example.ordermanagement.model.dto.request.RoleRequest;
 import org.example.ordermanagement.model.dto.request.UserRequest;
 import org.example.ordermanagement.model.dto.request.UserSearchRequest;
 import org.example.ordermanagement.model.dto.response.ApiResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.service.UserService;
+import org.example.ordermanagement.service.implement.UserServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final UserServiceImpl userService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> create(@RequestBody UserRequest userRequest) {
@@ -45,14 +48,17 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/role")
-    public ResponseEntity<ApiResponse<UserResponse>> assignRoles(@PathVariable Long userId, @RequestBody Set<String> roleNames) {
+    public ResponseEntity<ApiResponse<UserResponse>> assignRoles(@PathVariable Long userId, @RequestBody Set<RoleRequest> roleRequest) {
+        Set<String> roleNames = roleRequest.stream()
+                .map(RoleRequest::getName)
+                .collect(Collectors.toSet());
+
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
                 .code(1000)
                 .message("Successfully assigned roles to user!")
                 .result(userService.assignRolesToUser(userId, roleNames))
                 .build();
         return ResponseEntity.ok(response);
-
     }
 
     @PostMapping("/search")
