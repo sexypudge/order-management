@@ -15,7 +15,7 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(value = Exception.class)
-    public ResponseEntity<ApiResponse<?>>HandleRuntimeException(RuntimeException exception){
+    public ResponseEntity<ApiResponse<?>>HandleRuntimeException(){
         ApiResponse<?> apiResponse= new ApiResponse<>();
         apiResponse.setCode(ErrCode.UNCATEGORIZED_EXCEPTION.getCode());
         apiResponse.setMessage(ErrCode.UNCATEGORIZED_EXCEPTION.getMessage());

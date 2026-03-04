@@ -60,11 +60,11 @@ public class UserServiceImpl implements UserService {
     public UserResponse assignRolesToUser(Long userId, Set<String> roleNames) {
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
 
-        Set<UserRole> enums = roleNames.stream()
+        Set<UserRole> roleEnums = roleNames.stream()
                 .map(name -> UserRole.valueOf(name.toUpperCase()))
                 .collect(Collectors.toSet());
 
-        Set<Role> roles = roleRepository.findAllByNameIn(enums);
+        Set<Role> roles = roleRepository.findAllByNameIn(roleEnums);
 
         if (roles.isEmpty()) throw new AppException(ErrCode.ROLE_NOT_FOUND);
 
@@ -72,6 +72,8 @@ public class UserServiceImpl implements UserService {
         return responseDTO(userRepository.save(user));
     }
 
+    @Override
+    @Transactional
     public PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest userSearchRequest) {
         String actualField;
         if (sortBy.equals("name")) {
@@ -102,6 +104,7 @@ public class UserServiceImpl implements UserService {
                                 .id(user.getId())
                                 .username(user.getUsername())
                                 .status(user.getStatus().name())
+                                .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
                                 .build())
                         .toList())
                 .page(userPage.getNumber())

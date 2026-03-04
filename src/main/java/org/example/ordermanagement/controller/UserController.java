@@ -48,17 +48,15 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/role")
-    public ResponseEntity<ApiResponse<UserResponse>> assignRoles(@PathVariable Long userId, @RequestBody Set<RoleRequest> roleRequest) {
-        Set<String> roleNames = roleRequest.stream()
-                .map(RoleRequest::getName)
-                .collect(Collectors.toSet());
-
-        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
+    public ApiResponse<UserResponse> assignRoles(
+            @PathVariable Long userId,
+            @RequestBody Set<String> roleNames
+    ) {
+        return ApiResponse.<UserResponse>builder()
                 .code(1000)
                 .message("Successfully assigned roles to user!")
                 .result(userService.assignRolesToUser(userId, roleNames))
                 .build();
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/search")
