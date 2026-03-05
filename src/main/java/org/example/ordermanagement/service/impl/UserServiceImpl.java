@@ -16,10 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -100,6 +97,27 @@ public class UserServiceImpl implements UserService {
                 .hasPrevious(userPage.hasPrevious())
                 .sortBy(sortBy)
                 .sortDirection(sortDirection)
+                .build();
+    }
+    @Override
+    public UserResponse assignRoles(Long userId, Set<Integer> roleIds) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("USER_NOT_EXISTED", "người dùng đã tồn tại "));
+
+        var roles = roleRepository.findAllById(roleIds);
+
+        // Gán Role cho User
+        user.setRoles(new HashSet<>(roles));
+
+        User updatedUser = userRepository.save(user);
+
+        return UserResponse.builder()
+                .id(updatedUser.getId())
+                .username(updatedUser.getUsername())
+                .status(updatedUser.getStatus())
+                .roles(updatedUser.getRoles().stream()
+                        .map(role -> role.getName().toString())
+                        .collect(Collectors.toSet()))
                 .build();
     }
 }
