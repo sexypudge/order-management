@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.HashSet;
 import java.util.List;
@@ -90,14 +91,20 @@ public class UserServiceImpl implements UserService {
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<User> userPage;
-        if (userSearchRequest.getId() != null) {
-            userPage = userRepository.findById(userSearchRequest.getId(), pageable);
-        } else if (userSearchRequest.getName() != null && !userSearchRequest.getName().isEmpty()) {
-            userPage = userRepository.findByUsernameContaining(userSearchRequest.getName(), pageable);
-        } else {
-            userPage = userRepository.findAll(pageable);
+        Long searchId = null;
+        if(userSearchRequest!=null){
+            searchId = userSearchRequest.getId();
         }
+
+        String searchName = null;
+        if (userSearchRequest!=null){
+            if(userSearchRequest.getName()!=null && !userSearchRequest.getName().isEmpty()){
+                searchName = userSearchRequest.getName();
+            }
+        }
+
+        Page<User> userPage = userRepository.searchUsersBasic(searchId,searchName,pageable);
+
         return PageResponse.<UserResponse>builder()
                 .content(userPage.getContent().stream()
                         .map(user -> UserResponse.builder()
