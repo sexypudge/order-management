@@ -5,8 +5,8 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11-SNAPSHOT</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.3.5</version>
+        <relativePath/>
     </parent>
     <groupId>org.example</groupId>
     <artifactId>order-management</artifactId>
@@ -65,11 +65,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>1.18.32</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
