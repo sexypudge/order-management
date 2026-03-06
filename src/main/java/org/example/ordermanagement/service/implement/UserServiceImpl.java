@@ -87,6 +87,16 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public PageResponse<UserSearchResponse> searchUsers(UserSearchRequest request, int page, int size, String sortBy, String sortDirection) {
+        Long id = null;
+        String name = null;
+
+        if (request != null) {
+            id = request.getId();
+            name = request.getName();
+            if (name != null && name.isBlank()) {
+                name = null;
+            }
+        }
 
         if (page < 0) {
             throw new BusinessException("INVALID_REQUEST", "Page must be >= 0");
@@ -113,9 +123,6 @@ public class UserServiceImpl implements UserService {
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-
-        Long id = null;
-        String name = null;
 
 
 
