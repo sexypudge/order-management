@@ -76,7 +76,6 @@ public class UserServiceImpl implements UserService {
                 .status(user.getStatus())
                 .roles(user.getRoles().stream()
                         .map(role -> role.getName().name()).collect(Collectors.toSet()))
-
                 .build();
     }
     @Override
@@ -89,7 +88,10 @@ public class UserServiceImpl implements UserService {
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<User> userPage = userRepository.searchUsersBasic(request.getId(), request.getName(), pageable);
+        Long searchId = (request!=null) ? request.getId():null;
+        String searchName = (request!=null) ? request.getName():null;
+
+        Page<User> userPage = userRepository.searchUsersBasic(searchId, searchName, pageable);
 
         // Chuyển đổi List<User> sang List<UserResponse>
         List<UserResponse> content = userPage.getContent().stream()
