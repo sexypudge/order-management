@@ -1,5 +1,6 @@
 package org.example.ordermanagement.controller;
 
+import jakarta.validation.Valid;
 import org.example.ordermanagement.model.dto.request.AssignRoleRequest;
 import org.example.ordermanagement.model.dto.request.CreateUserRequest;
 import org.example.ordermanagement.model.dto.request.UserSearchRequest;
@@ -13,6 +14,7 @@ import org.example.ordermanagement.util.ResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/users")
@@ -44,7 +46,7 @@ public class UserController {
 
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<UserSearchResponse>>> searchUsers(
-            @RequestBody UserSearchRequest request,
+           @Valid @RequestBody UserSearchRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
