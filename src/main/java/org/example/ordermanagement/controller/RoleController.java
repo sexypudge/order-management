@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.model.dto.request.RoleRequest;
 import org.example.ordermanagement.model.dto.response.ApiResponse;
 import org.example.ordermanagement.model.dto.response.RoleResponse;
-import org.example.ordermanagement.service.implement.RoleService;
+import org.example.ordermanagement.service.implement.RoleServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/role")
 @RequiredArgsConstructor
 public class RoleController {
-    private RoleService roleService;
+    private RoleServiceImpl roleService;
     @PostMapping
-    ResponseEntity<ApiResponse<RoleResponse>> create(@RequestBody RoleRequest roleRequest) {
+    public ResponseEntity<ApiResponse<RoleResponse>> create(@RequestBody RoleRequest roleRequest) {
         ApiResponse<RoleResponse> response = ApiResponse.<RoleResponse>builder()
                 .code(1000)
                 .message("Successfully created role!")

@@ -9,12 +9,19 @@ import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.UserRequest;
+import org.example.ordermanagement.model.dto.request.UserSearchRequest;
+import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.HashSet;
 import java.util.List;
@@ -43,27 +50,80 @@ public class UserServiceImpl implements UserService {
         return responseDTO(savedUser);
     }
 
-    public UserResponse getUserById(Long id){
+    public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(()-> new AppException(ErrCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
         return responseDTO(user);
     }
 
     @Override
     @Transactional
-    public List<UserResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream().map(this::responseDTO).collect(Collectors.toList());
-    }
-    @Override
-    @Transactional
-    public UserResponse assignRolesToUser(Long userId, Set<String> roleNames){
-        User user = userRepository.findById(userId).orElseThrow(()-> new AppException(ErrCode.USER_NOT_EXISTED));
-        Set<Role> roles = new HashSet<>(roleRepository.findByName(roleNames.toString()));
+    public UserResponse assignRolesToUser(Long userId, Set<String> roleNames) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
+
+        Set<UserRole> roleEnums = roleNames.stream()
+                .map(name -> UserRole.valueOf(name.toUpperCase()))
+                .collect(Collectors.toSet());
+
+        Set<Role> roles = roleRepository.findAllByNameIn(roleEnums);
+
+        if (roles.isEmpty()) throw new AppException(ErrCode.ROLE_NOT_FOUND);
 
         user.setRoles(roles);
-
         return responseDTO(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest userSearchRequest) {
+        String actualField;
+        if (sortBy.equals("name")) {
+            actualField = "username";
+        } else {
+            actualField = sortBy;
+        }
+        Sort sort;
+        if (sortDirection.equalsIgnoreCase("ASC")) {
+            sort = Sort.by(actualField).ascending();
+        } else {
+            sort = Sort.by(actualField).descending();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Long searchId = null;
+        if(userSearchRequest!=null){
+            searchId = userSearchRequest.getId();
+        }
+
+        String searchName = null;
+        if (userSearchRequest!=null){
+            if(userSearchRequest.getName()!=null && !userSearchRequest.getName().isEmpty()){
+                searchName = userSearchRequest.getName();
+            }
+        }
+
+        Page<User> userPage = userRepository.searchUsersBasic(searchId,searchName,pageable);
+
+        return PageResponse.<UserResponse>builder()
+                .content(userPage.getContent().stream()
+                        .map(user -> UserResponse.builder()
+                                .id(user.getId())
+                                .username(user.getUsername())
+                                .status(user.getStatus().name())
+                                .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
+                                .build())
+                        .toList())
+                .page(userPage.getNumber())
+                .size(userPage.getSize())
+                .totalElements(userPage.getTotalElements())
+                .totalPages(userPage.getTotalPages())
+                .hasNext(userPage.hasNext())
+                .hasPrevious(userPage.hasPrevious())
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .build();
+
     }
 
     private UserResponse responseDTO(User user) {
