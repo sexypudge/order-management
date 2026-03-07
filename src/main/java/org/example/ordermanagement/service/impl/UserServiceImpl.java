@@ -5,18 +5,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.ordermanagement.domain.Role;
 import org.example.ordermanagement.domain.User;
+import org.example.ordermanagement.dto.request.AssignRoleRequest;
 import org.example.ordermanagement.dto.request.UserRequest;
+import org.example.ordermanagement.dto.request.UserSearchRequest;
+import org.example.ordermanagement.dto.response.PageResponse;
 import org.example.ordermanagement.dto.response.UserResponse;
 import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,7 +38,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse getUserById(String id) {
+    public UserResponse getUserById(Long id) {
         // tìm user trong db nếu không thấy thì ném lỗi
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException("USER_NOT_EXISTED", "Không tìm thấy người dùng này"));
@@ -72,7 +76,66 @@ public class UserServiceImpl implements UserService {
                 .status(user.getStatus())
                 .roles(user.getRoles().stream()
                         .map(role -> role.getName().name()).collect(Collectors.toSet()))
+                .build();
+    }
+    @Override
+    public PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest request) {
 
+        // xăắp xếp
+        Sort sort = sortDirection.equalsIgnoreCase("ASC")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Long searchId = (request!=null) ? request.getId():null;
+        String searchName = (request!=null) ? request.getName():null;
+
+        Page<User> userPage = userRepository.searchUsersBasic(searchId, searchName, pageable);
+
+        // Chuyển đổi List<User> sang List<UserResponse>
+        List<UserResponse> content = userPage.getContent().stream()
+                .map(user -> UserResponse.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .status(user.getStatus())
+                        .roles(user.getRoles() != null ? user.getRoles().stream()
+                                .map(role -> role.getName().toString())      // Ép kiểu về String
+                                .collect(Collectors.toSet()) : new HashSet<>())
+                        .build())
+                .toList();
+
+        return PageResponse.<UserResponse>builder()
+                .content(content)
+                .page(userPage.getNumber())
+                .size(userPage.getSize())
+                .totalElements(userPage.getTotalElements())
+                .totalPages(userPage.getTotalPages())
+                .hasNext(userPage.hasNext())
+                .hasPrevious(userPage.hasPrevious())
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .build();
+    }
+    @Override
+    public UserResponse assignRoles(Long userId, Set<Integer> roleIds) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("USER_NOT_EXISTED", "người dùng đã tồn tại "));
+
+        var roles = roleRepository.findAllById(roleIds);
+
+        // Gán Role cho User
+        user.setRoles(new HashSet<>(roles));
+
+        User updatedUser = userRepository.save(user);
+
+        return UserResponse.builder()
+                .id(updatedUser.getId())
+                .username(updatedUser.getUsername())
+                .status(updatedUser.getStatus())
+                .roles(updatedUser.getRoles().stream()
+                        .map(role -> role.getName().toString())
+                        .collect(Collectors.toSet()))
                 .build();
     }
 }

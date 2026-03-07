@@ -9,7 +9,7 @@ import java.util.Set;
 @Builder // Giúp tạo object nhanh hơn (ví dụ: UserResponse.builder().id("1").build())
 @AllArgsConstructor @NoArgsConstructor
 public class UserResponse {
-    private String id;
+    private Long id;
     private String username;
     private String status;
     Set<String> roles;

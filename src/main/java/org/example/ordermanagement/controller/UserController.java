@@ -3,17 +3,21 @@ package org.example.ordermanagement.controller;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.example.ordermanagement.dto.request.AssignRoleRequest;
 import org.example.ordermanagement.dto.request.UserRequest;
+import org.example.ordermanagement.dto.request.UserSearchRequest;
 import org.example.ordermanagement.dto.response.ApiResponse;
+import org.example.ordermanagement.dto.response.PageResponse;
 import org.example.ordermanagement.dto.response.UserResponse;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
@@ -46,7 +50,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable String userId) {
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable Long userId) {
         UserResponse result = userService.getUserById(userId);
 
         ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()
@@ -54,5 +58,31 @@ public class UserController {
                 .build();
 
         return ResponseEntity.ok(apiResponse);
+    }
+    @PostMapping("/search")
+    public ApiResponse<PageResponse<UserResponse>> searchUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestBody(required = false) UserSearchRequest request) {
+
+        var result = userService.searchUsers(page, size, sortBy, sortDirection, request);
+
+        return ApiResponse.<PageResponse<UserResponse>>builder()
+                .data(result)
+                .build();
+    }
+    @PutMapping("/{userId}/roles")
+    public ApiResponse<UserResponse> assignRoles(
+            @PathVariable Long userId,
+            @RequestBody Set<Integer> roleIds) {
+
+        var result = userService.assignRoles(userId, roleIds);
+
+        return ApiResponse.<UserResponse>builder()
+                .message("Cập nhật quyền thành công")
+                .data(result)
+                .build();
     }
 }
