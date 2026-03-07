@@ -1,6 +1,6 @@
 package org.example.ordermanagement.model.dto.request;
 
-
+import java.util.*;
 
 import lombok.*;
 
@@ -8,4 +8,5 @@ import lombok.*;
 public class UserRequest {
     private String username;
     private String password;
+    Set<Integer> roleIds;
 }
