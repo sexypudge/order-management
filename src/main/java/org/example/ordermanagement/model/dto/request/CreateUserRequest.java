@@ -3,7 +3,7 @@ package org.example.ordermanagement.model.dto.request;
 public class CreateUserRequest {
 
     private String username;
-    private String password;
+        private String password;
 
     public String getUsername() {
         return username;

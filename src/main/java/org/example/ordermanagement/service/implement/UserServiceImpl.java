@@ -87,6 +87,23 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public PageResponse<UserSearchResponse> searchUsers(UserSearchRequest request, int page, int size, String sortBy, String sortDirection) {
+        Long id = null;
+        String name = null;
+        UserRole roleEnum = null;
+
+        if (request != null) {
+            id = request.getId();
+            name = request.getName();
+            if (name != null && name.isBlank()) name = null;
+            String roleStr = request.getRole();
+            if (roleStr != null && !roleStr.isBlank()) {
+                try {
+                    roleEnum = UserRole.valueOf(roleStr.trim().toUpperCase());
+                } catch (Exception e) {
+                    throw new BusinessException("INVALID_REQUEST", "role must be ADMIN, STAFF, CUSTOMER");
+                }
+            }
+        }
 
         if (page < 0) {
             throw new BusinessException("INVALID_REQUEST", "Page must be >= 0");
@@ -114,16 +131,17 @@ public class UserServiceImpl implements UserService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
 
-        Long id = null;
-        String name = null;
 
 
-
-        Page<User> userPage = userRepository.searchUsers(id, name, pageable);
+        Page<User> userPage = userRepository.searchUsers(id, name, roleEnum, pageable);
 
         List<UserSearchResponse> content = new ArrayList<>();
         for (User u : userPage.getContent()) {
-            content.add(new UserSearchResponse(u.getId(), u.getUsername()));
+            List<String> roles = new ArrayList<>();
+            for (Role r : u.getRoles()) {
+                roles.add(r.getName().name());
+            }
+            content.add(new UserSearchResponse(u.getId(), u.getUsername(), roles));
         }
 
         PageResponse<UserSearchResponse> res = new PageResponse<>();
