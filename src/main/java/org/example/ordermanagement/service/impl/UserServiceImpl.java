@@ -1,5 +1,6 @@
 package org.example.ordermanagement.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.exception.BusinessException;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.UserRequest;
@@ -17,14 +18,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
+@RequiredArgsConstructor
 @Service
 public class UserServiceImpl implements UserService {
-    UserRepository userRepository;
-    RoleRepository roleRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
 
     private List<UserResponse> storage = new ArrayList<>();
+
+
 
     @Override
     public List<UserResponse> getAllUsers() {
