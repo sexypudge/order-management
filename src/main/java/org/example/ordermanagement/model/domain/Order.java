@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.ordermanagement.common.enums.OrderStatus;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders", uniqueConstraints = @UniqueConstraint(columnNames = "order_code"))
@@ -25,5 +27,13 @@ public class Order {
     @Column(nullable = false, length = 20)
     private OrderStatus status;
 
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal totalAmount;
 
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id", nullable = false)
+    private User createdBy;
 }

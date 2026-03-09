@@ -1,4 +1,4 @@
-OrderStatus.javapackage org.example.ordermanagement.common.enums;
+package org.example.ordermanagement.common.enums;
 
 public enum OrderStatus {
     CREATED,
