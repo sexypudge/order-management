@@ -6,7 +6,6 @@ import org.example.ordermanagement.model.dto.request.UserRequest;
 import org.example.ordermanagement.model.dto.request.UserSearchRequest;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
-import org.example.ordermanagement.exception.BusinessException;
 import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
@@ -50,7 +49,7 @@ public class UserServiceImpl implements UserService {
         return newUser;
     }
     @Override
-    public UserResponse getUserById(String id) {
+    public UserResponse getUserById(Long id) {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("USER_NOT_EXISTED", "Không tìm thấy người dùng này"));
@@ -58,7 +57,7 @@ public class UserServiceImpl implements UserService {
         return UserResponse.builder()
                 .id(String.valueOf(user.getId()))
                 .username(user.getUsername())
-                .status(user.getStatus())
+                .status(String.valueOf(user.getStatus()))
                 .roles(user.getRoles().stream()
                         .map(role -> role.getName().name()).collect(Collectors.toSet()))
                 .build();
@@ -80,7 +79,7 @@ public class UserServiceImpl implements UserService {
                 .map(user -> UserResponse.builder()
                         .id(user.getId())
                         .username(user.getUsername())
-                        .status(user.getStatus())
+                        .status(user.getStatus().name())
                         .roles(user.getRoles() != null ? user.getRoles().stream()
                                 .map(role -> role.getName().toString())      // Ép kiểu về String
                                 .collect(Collectors.toSet()) : new HashSet<>())
@@ -114,7 +113,7 @@ public class UserServiceImpl implements UserService {
         return UserResponse.builder()
                 .id(updatedUser.getId())
                 .username(updatedUser.getUsername())
-                .status(updatedUser.getStatus())
+                .status(updatedUser.getStatus().name())
                 .roles(updatedUser.getRoles().stream()
                         .map(role -> role.getName().toString())
                         .collect(Collectors.toSet()))

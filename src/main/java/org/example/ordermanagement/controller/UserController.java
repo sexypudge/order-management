@@ -1,6 +1,7 @@
 package org.example.ordermanagement.controller;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.ordermanagement.model.dto.request.UserRequest;
@@ -18,6 +19,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
     UserService userService;
@@ -48,8 +50,8 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-
-    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable String userId) {
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable Long userId) {
         UserResponse result = userService.getUserById(userId);
 
         ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()

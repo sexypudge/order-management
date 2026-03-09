@@ -12,6 +12,9 @@ public interface UserService {
     UserResponse createUser(UserRequest request);   // tạo mới user
 
     UserResponse getUserById(Long userId);
+
+
+
     PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest request);
     UserResponse assignRoles(Long userId, Set<Integer> roleIds);
 }
