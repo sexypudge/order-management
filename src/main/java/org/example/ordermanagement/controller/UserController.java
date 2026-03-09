@@ -48,7 +48,7 @@ public class UserController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping("/{userId}")
+
     public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable String userId) {
         UserResponse result = userService.getUserById(userId);
 
