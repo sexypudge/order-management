@@ -6,6 +6,7 @@ import org.example.ordermanagement.common.enums.ErrCode;
 import org.example.ordermanagement.common.enums.UserRole;
 import org.example.ordermanagement.common.enums.UserStatus;
 import org.example.ordermanagement.exception.AppException;
+import org.example.ordermanagement.exception.GlobalExceptionHandler;
 import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.UserRequest;
@@ -76,12 +77,20 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest userSearchRequest) {
+        if (page < 0) {
+            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
+        }
+        if (size <= 0 || size > 100) {
+            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
+        }
+
         String actualField;
         if (sortBy.equals("name")) {
             actualField = "username";
         } else {
             actualField = sortBy;
         }
+
         Sort sort;
         if (sortDirection.equalsIgnoreCase("ASC")) {
             sort = Sort.by(actualField).ascending();
@@ -92,18 +101,22 @@ public class UserServiceImpl implements UserService {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Long searchId = null;
-        if(userSearchRequest!=null){
+        if (userSearchRequest != null) {
             searchId = userSearchRequest.getId();
         }
 
         String searchName = null;
-        if (userSearchRequest!=null){
-            if(userSearchRequest.getName()!=null && !userSearchRequest.getName().isEmpty()){
+        if (userSearchRequest != null) {
+            if (userSearchRequest.getName() != null && !userSearchRequest.getName().isEmpty()) {
                 searchName = userSearchRequest.getName();
             }
         }
+        UserRole searchRole = null;
+        if (userSearchRequest != null) {
+            searchRole = userSearchRequest.getRole();
+        }
 
-        Page<User> userPage = userRepository.searchUsersBasic(searchId,searchName,pageable);
+        Page<User> userPage = userRepository.searchUsersBasic(searchId, searchName, searchRole, pageable);
 
         return PageResponse.<UserResponse>builder()
                 .content(userPage.getContent().stream()
