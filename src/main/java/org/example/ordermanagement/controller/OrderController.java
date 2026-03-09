@@ -24,4 +24,8 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtil.success(orderService.createOrder(request)));
     }
+    @GetMapping
+    public ResponseEntity<ApiResponse<Object>> getOrder() {
+        return ResponseEntity.ok(ResponseUtil.success(orderService.getOrders()));
+    }
 }
