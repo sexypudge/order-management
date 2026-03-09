@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.ordermanagement.common.enums.OrderStatus;
 
 import java.time.LocalDateTime;
 
@@ -22,7 +23,7 @@ public class Order {
     @Column(unique = true, nullable = false)
     private String orderCode;
 
-    private String status;
+    private OrderStatus status;
 
     private Long totalAmount;
 
