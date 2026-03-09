@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +57,14 @@ public class OrderServiceImpl implements OrderService {
             result.add(toResponse(o));
         }
         return result;
+    }
+    @Override
+    public OrderResponse getOrderById(Long id) {
+        Optional<Order> order = orderRepository.findById(id);
+        if (order.isEmpty()) {
+            throw new BusinessException("USER_NOT_FOUND", "User not found");
+        }
+        return toResponse(order.get());
     }
     private OrderResponse toResponse(Order order) {
         User u = order.getCreatedBy();

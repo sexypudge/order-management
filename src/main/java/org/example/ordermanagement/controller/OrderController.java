@@ -3,6 +3,8 @@ package org.example.ordermanagement.controller;
 import jakarta.validation.Valid;
 import org.example.ordermanagement.model.dto.request.CreateOrderRequest;
 import org.example.ordermanagement.model.dto.response.ApiResponse;
+import org.example.ordermanagement.model.dto.response.OrderResponse;
+import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.service.OrderService;
 import org.example.ordermanagement.util.ResponseUtil;
 import org.springframework.http.HttpStatus;
@@ -27,5 +29,9 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<ApiResponse<Object>> getOrder() {
         return ResponseEntity.ok(ResponseUtil.success(orderService.getOrders()));
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(@PathVariable Long id) {
+        return ResponseEntity.ok(ResponseUtil.success(orderService.getOrderById(id)));
     }
 }
