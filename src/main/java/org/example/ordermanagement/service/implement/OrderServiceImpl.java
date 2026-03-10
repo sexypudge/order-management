@@ -2,16 +2,24 @@ package org.example.ordermanagement.service.implement;
 
 import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.common.enums.OrderStatus;
+
 import org.example.ordermanagement.exception.BusinessException;
 import org.example.ordermanagement.model.domain.Order;
+
+import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.CreateOrderRequest;
-import org.example.ordermanagement.model.dto.response.OrderResponse;
-import org.example.ordermanagement.model.dto.response.UserOrderResponse;
-import org.example.ordermanagement.model.dto.response.UserResponse;
+import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
+import org.example.ordermanagement.model.dto.response.OrderSearchResponse;
+import org.example.ordermanagement.model.dto.response.*;
 import org.example.ordermanagement.repository.OrderRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.OrderService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +70,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse getOrderById(Long id) {
         Optional<Order> order = orderRepository.findById(id);
         if (order.isEmpty()) {
-            throw new BusinessException("USER_NOT_FOUND", "User not found");
+            throw new BusinessException("ORDER_NOT_FOUND", "Order not found");
         }
         return toResponse(order.get());
     }
@@ -77,4 +85,83 @@ public class OrderServiceImpl implements OrderService {
                 new UserOrderResponse(u.getId(), u.getUsername())
         );
     }
+
+
+    @Override
+    public PageResponse<OrderSearchResponse> searchOrders(OrderSearchRequest request, int page, int size, String sortBy, String sortDirection) {
+        String orderCode = null;
+        String username = null;
+        OrderStatus status = null;
+
+        if (request != null) {
+            orderCode = request.getOrderCode();
+            username = request.getUsername();
+            if (username != null && username.isBlank()) username = null;
+            String statusStr = request.getStatus();
+            if (statusStr != null && !statusStr.isBlank()) {
+                try {
+                    status = OrderStatus.valueOf(statusStr.trim().toUpperCase());
+                } catch (Exception e) {
+                    throw new BusinessException("INVALID_REQUEST", "status must be CREATED,CONFIRMED,CANCELLED");
+                }
+            }
+        }
+
+        if (page < 0) {
+            throw new BusinessException("INVALID_REQUEST", "Page must be >= 0");
+        }
+        if (sortBy == null || sortBy.isBlank()) sortBy = "orderCode";
+        if (sortDirection == null || sortDirection.isBlank()) sortDirection = "ASC";
+
+        String sortField;
+        if (sortBy.equalsIgnoreCase("orderCode")) {
+            sortField = "orderCode";
+        } else if (sortBy.equalsIgnoreCase("username")) {
+            sortField = "username";
+        } else {
+            throw new BusinessException("INVALID_REQUEST", "sortBy must be orderCode, username");
+        }
+
+        Sort.Direction direction;
+        if (sortDirection.equalsIgnoreCase("ASC")) {
+            direction = Sort.Direction.ASC;
+        } else if (sortDirection.equalsIgnoreCase("DESC")) {
+            direction = Sort.Direction.DESC;
+        } else {
+            throw new BusinessException("INVALID_REQUEST", "sortDirection must be ASC or DESC");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+
+
+
+        Page<Order> orderPage = orderRepository.searchOrders(orderCode, username, status, pageable);
+
+        List<OrderSearchResponse> content = new ArrayList<>();
+
+        for (User o : orderPage.getContent()) {
+            List<String> status = new ArrayList<>();
+            for (Role r : o.getStatus()) {
+                status.add(o.getStatus().name());
+            }
+            content.add(new OrderSearchResponse(o.getOrderCode(), o.getUsername(), status));
+        }
+
+
+        PageResponse<OrderSearchResponse> res = new PageResponse<>();
+        res.setContent(content);
+        res.setPage(orderPage.getNumber());
+        res.setSize(orderPage.getSize());
+        res.setTotalElements(orderPage.getTotalElements());
+        res.setTotalPages(orderPage.getTotalPages());
+        res.setHasNext(orderPage.hasNext());
+        res.setHasPrevious(orderPage.hasPrevious());
+        res.setSortBy(sortBy.toLowerCase());
+        res.setSortDirection(direction.name());
+
+        return res;
+    }
+
+
+
 }
