@@ -47,10 +47,20 @@ public class OrderServiceImpl implements OrderService {
                 .customerName(user.getUsername())
                 .build();
     }
-//    @Override
-//   public OrderResponse getOrderById(Long id){
-//
-//   }
+    @Override
+    public OrderResponse getOrderById(Long id) {
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new AppException("ORDER_NOT_FOUND", "Đơn hàng không tồn tại"));
+
+
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .status(order.getStatus())
+                .customerName(order.getUser().getUsername())
+                .build();
+    }
 //   @Override
 //    public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest request){
 //
