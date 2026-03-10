@@ -14,7 +14,8 @@ public enum ErrCode {
     ROLE_EXISTED(1004,"Role existed", HttpStatus.BAD_REQUEST),
     USER_NOT_EXISTED(1005,"USER_NOT_EXISTED",HttpStatus.NOT_FOUND),
     INVALID_PAGE_NUMBER(1006, "Page number must be zero or greater",HttpStatus.BAD_REQUEST),
-    INVALID_PAGE_SIZE(1007, "Page size must be between 1 and 100", HttpStatus.BAD_REQUEST);
+    INVALID_PAGE_SIZE(1007, "Page size must be between 1 and 100", HttpStatus.BAD_REQUEST),
+    ORDER_NOT_FOUND(1008,"Order not existed!", HttpStatus.BAD_REQUEST);
 
     private int code;
     private String message;

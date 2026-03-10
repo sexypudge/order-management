@@ -7,4 +7,5 @@ import org.example.ordermanagement.model.dto.response.RoleResponse;
 
 public interface OrderService {
     OrderResponse createOrder(OrderCreateRequest orderCreateRequest);
+    OrderResponse getOrderById(Long id);
 }

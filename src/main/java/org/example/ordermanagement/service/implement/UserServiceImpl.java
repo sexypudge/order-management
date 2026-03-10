@@ -50,7 +50,8 @@ public class UserServiceImpl implements UserService {
 
         return responseDTO(savedUser);
     }
-
+    @Override
+    @Transactional
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
