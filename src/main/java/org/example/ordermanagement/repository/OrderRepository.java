@@ -16,7 +16,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("""
         SELECT  o
         FROM Order o
-        LEFT JOIN o.createdBy u
+        JOIN o.createdBy u
         WHERE (:orderCode IS NULL OR o.orderCode = :orderCode)
           AND (:username IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :username, '%')))
           AND (:status IS NULL OR o.status = :status)

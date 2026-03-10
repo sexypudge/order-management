@@ -117,9 +117,11 @@ public class OrderServiceImpl implements OrderService {
         if (sortBy.equalsIgnoreCase("orderCode")) {
             sortField = "orderCode";
         } else if (sortBy.equalsIgnoreCase("username")) {
-            sortField = "username";
+            sortField = "createdBy.username";
+        } else if (sortBy.equalsIgnoreCase("status")) {
+            sortField = "status";
         } else {
-            throw new BusinessException("INVALID_REQUEST", "sortBy must be orderCode, username");
+            throw new BusinessException("INVALID_REQUEST", "sortBy must be orderCode, username, or status");
         }
 
         Sort.Direction direction;
@@ -138,15 +140,16 @@ public class OrderServiceImpl implements OrderService {
         Page<Order> orderPage = orderRepository.searchOrders(orderCode, username, status, pageable);
 
         List<OrderSearchResponse> content = new ArrayList<>();
-
-        for (User o : orderPage.getContent()) {
-            List<String> status = new ArrayList<>();
-            for (Role r : o.getStatus()) {
-                status.add(o.getStatus().name());
-            }
-            content.add(new OrderSearchResponse(o.getOrderCode(), o.getUsername(), status));
+        for (Order o : orderPage.getContent()) {
+            content.add(new OrderSearchResponse(
+                    o.getId(),
+                    o.getOrderCode(),
+                    o.getStatus(),
+                    o.getTotalAmount(),
+                    o.getCreatedAt(),
+                    o.getCreatedBy().getUsername()
+            ));
         }
-
 
         PageResponse<OrderSearchResponse> res = new PageResponse<>();
         res.setContent(content);
