@@ -17,10 +17,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 //    Lấy tất cả User
 //    Nếu có roles thì join
 //    Nếu không có roles  vẫn lấy User (roles = null)
-    @Query("SELECT DISTINCT u FROM User u WHERE " +
-            "(:id IS NULL OR u.id = :id) AND " +
-            "(:name IS NULL OR u.username LIKE CONCAT('%', :name, '%'))")
-    Page<User> searchUsersBasic(@Param("id") Long id,
-                                @Param("name") String name,
-                                Pageable pageable);
+@Query("SELECT DISTINCT u FROM User u " +
+        "LEFT JOIN u.roles r " +
+        "WHERE (:id IS NULL OR u.id = :id) " +
+        "AND (:name IS NULL OR u.username LIKE CONCAT('%', :name, '%')) " +
+        "AND (:roleId IS NULL OR r.id = :roleId)")
+Page<User> searchUsersBasic(@Param("id") Long id,
+                            @Param("name") String name,
+                            @Param("roleId") Integer roleId,
+                            Pageable pageable);
 }
