@@ -1,5 +1,8 @@
 package org.example.ordermanagement.dto.request;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -9,6 +12,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderRequest {
+    @NotBlank(message = "Mã đơn hàng không được để trống")
     String orderCode;
-    Long userId; // ID của người mua hàng
+
+    @NotNull(message = "ID người dùng không được để trống")
+    @Min(value = 1, message = "ID người dùng không hợp lệ")
+    Long userId;
 }
