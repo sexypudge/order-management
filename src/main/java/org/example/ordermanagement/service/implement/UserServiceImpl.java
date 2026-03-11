@@ -50,6 +50,7 @@ public class UserServiceImpl implements UserService {
 
         return responseDTO(savedUser);
     }
+
     @Override
     @Transactional
     public UserResponse getUserById(Long id) {

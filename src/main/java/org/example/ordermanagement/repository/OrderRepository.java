@@ -11,13 +11,15 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Optional;
+
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    Optional<Order>findById (Long id);
+    Optional<Order> findById(Long id);
+
     @Query("SELECT DISTINCT o FROM Order o " +
             "LEFT JOIN o.createdBy u " +
-    "WHERE (:id IS NULL OR o.id = :id) " +
-    "AND (:name IS NULL OR u.username = :name ) ")
+            "WHERE (:id IS NULL OR o.id = :id) " +
+            "AND (:name IS NULL OR u.username LIKE %:name%) ")
     Page<Order> searchOrderBasics(@Param("id") Long id,
                                   @Param("name") String name,
                                   Pageable pageable);

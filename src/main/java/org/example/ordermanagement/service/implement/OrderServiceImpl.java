@@ -45,9 +45,10 @@ public class OrderServiceImpl implements OrderService {
         order = orderRepository.save(order);
         return responseDTO(order);
     }
+
     @Override
     @Transactional
-    public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest){
+    public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest) {
         if (page < 0) {
             throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
         }
@@ -98,6 +99,7 @@ public class OrderServiceImpl implements OrderService {
                 .sortDirection(sortDirection)
                 .build();
     }
+
     @Override
     @Transactional
     public OrderResponse getOrderById(Long id) {
