@@ -8,11 +8,17 @@ import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
+import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
+import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.repository.OrderRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.OrderService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -39,7 +45,59 @@ public class OrderServiceImpl implements OrderService {
         order = orderRepository.save(order);
         return responseDTO(order);
     }
+    @Override
+    @Transactional
+    public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest){
+        if (page < 0) {
+            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
+        }
+        if (size <= 0 || size > 100) {
+            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
+        }
 
+        String actualField;
+        if (sortBy.equals("name")) {
+            actualField = "username";
+        } else {
+            actualField = sortBy;
+        }
+
+        Sort sort;
+        if (sortDirection.equalsIgnoreCase("ASC")) {
+            sort = Sort.by(actualField).ascending();
+        } else {
+            sort = Sort.by(actualField).descending();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Long searchId = null;
+        if (orderSearchRequest != null) {
+            searchId = orderSearchRequest.getId();
+        }
+
+        String searchName = null;
+        if (orderSearchRequest != null) {
+            if (orderSearchRequest.getName() != null && !orderSearchRequest.getName().isEmpty()) {
+                searchName = orderSearchRequest.getName();
+            }
+        }
+        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, pageable);
+
+        return PageResponse.<OrderResponse>builder()
+                .content(orderPage.getContent().stream()
+                        .map(this::responseDTO)
+                        .toList())
+                .page(orderPage.getNumber())
+                .size(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .hasNext(orderPage.hasNext())
+                .hasPrevious(orderPage.hasPrevious())
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .build();
+    }
     @Override
     @Transactional
     public OrderResponse getOrderById(Long id) {
