@@ -6,8 +6,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.ordermanagement.dto.request.OrderRequest;
+import org.example.ordermanagement.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.dto.response.ApiResponse;
 import org.example.ordermanagement.dto.response.OrderResponse;
+import org.example.ordermanagement.dto.response.PageResponse;
 import org.example.ordermanagement.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +37,22 @@ public class OrderController {
         var result = orderService.getOrderById(orderId);
 
         return ResponseEntity.ok(ApiResponse.<OrderResponse>builder()
+                .code("SUCCESS")
+                .data(result)
+                .build());
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> searchOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestBody(required = false) OrderSearchRequest request) {
+
+        var result = orderService.searchOrders(page, size, sortBy, sortDirection, request);
+
+        return ResponseEntity.ok(ApiResponse.<PageResponse<OrderResponse>>builder()
                 .code("SUCCESS")
                 .data(result)
                 .build());

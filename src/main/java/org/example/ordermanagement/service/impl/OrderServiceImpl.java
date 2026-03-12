@@ -15,7 +15,13 @@ import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.repository.OrderRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.OrderService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
                 .customerName(user.getUsername())
                 .build();
     }
+
     @Override
     public OrderResponse getOrderById(Long id) {
 
@@ -61,8 +68,40 @@ public class OrderServiceImpl implements OrderService {
                 .customerName(order.getUser().getUsername())
                 .build();
     }
-//   @Override
-//    public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest request){
-//
-//    }
+
+    @Override
+    public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest request) {
+        Sort sort = sortDirection.equalsIgnoreCase("ASC")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        String searchOrderCode = (request != null) ? request.getOrderCode() : null;
+        String searchUsername = (request != null) ? request.getUsername() : null;
+        OrderStatus searchStatus = (request != null) ? request.getStatus() : null;
+
+        Page<Order> orderPage = orderRepository.searchOrders(searchOrderCode, searchUsername, searchStatus, pageable);
+
+        List<OrderResponse> content = orderPage.getContent().stream()
+                .map(order -> OrderResponse.builder()
+                        .id(order.getId())
+                        .orderCode(order.getOrderCode())
+                        .status(order.getStatus())
+                        .customerName(order.getUser() != null ? order.getUser().getUsername() : "N/A")
+                        .build())
+                .toList();
+
+
+        return PageResponse.<OrderResponse>builder()
+                .content(content)
+                .page(orderPage.getNumber())
+                .size(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .hasNext(orderPage.hasNext())
+                .hasPrevious(orderPage.hasPrevious())
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .build();
+    }
 }
