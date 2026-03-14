@@ -58,7 +58,7 @@ public class OrderServiceImpl implements OrderService {
 
         String actualField;
         if (sortBy.equals("name")) {
-            actualField = "username";
+            actualField = "createdBy.username";
         } else {
             actualField = sortBy;
         }
@@ -83,7 +83,13 @@ public class OrderServiceImpl implements OrderService {
                 searchName = orderSearchRequest.getName();
             }
         }
-        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, pageable);
+
+        OrderStatus searchStatus = null;
+        if (orderSearchRequest != null){
+            searchStatus = orderSearchRequest.getStatus();
+        }
+
+        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus, pageable);
 
         return PageResponse.<OrderResponse>builder()
                 .content(orderPage.getContent().stream()

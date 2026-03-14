@@ -1,5 +1,6 @@
 package org.example.ordermanagement.repository;
 
+import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.Role;
 import org.springframework.data.domain.Page;
@@ -16,11 +17,13 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findById(Long id);
 
-    @Query("SELECT DISTINCT o FROM Order o " +
+    @Query("SELECT o FROM Order o " +
             "LEFT JOIN o.createdBy u " +
             "WHERE (:id IS NULL OR o.id = :id) " +
-            "AND (:name IS NULL OR u.username LIKE %:name%) ")
+            "AND (:name IS NULL OR u.username LIKE %:name%) " +
+            "AND (:status IS NULL OR o.status = :status) ")
     Page<Order> searchOrderBasics(@Param("id") Long id,
                                   @Param("name") String name,
+                                  @Param("status") OrderStatus status,
                                   Pageable pageable);
 }
