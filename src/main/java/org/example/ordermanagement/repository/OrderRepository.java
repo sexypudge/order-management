@@ -6,13 +6,14 @@ import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     boolean existsByOrderCodeIgnoreCase(String orderCode);
-
+    @EntityGraph(attributePaths = {"createdBy"})
     @Query("""
         SELECT  o
         FROM Order o
