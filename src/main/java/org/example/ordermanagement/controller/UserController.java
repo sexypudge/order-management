@@ -51,7 +51,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable String userId) {
         UserResponse result = userService.getUserById(userId);
 
         ApiResponse<UserResponse> apiResponse = ApiResponse.<UserResponse>builder()
@@ -76,7 +76,7 @@ public class UserController {
     }
     @PutMapping("/{userId}/roles")
     public ApiResponse<UserResponse> assignRoles(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestBody Set<Integer> roleIds) {
 
         var result = userService.assignRoles(userId, roleIds);
