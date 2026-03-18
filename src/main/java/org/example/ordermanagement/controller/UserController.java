@@ -1,6 +1,7 @@
 package org.example.ordermanagement.controller;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.ordermanagement.model.dto.request.UserRequest;
@@ -18,6 +19,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
     UserService userService;
@@ -74,7 +76,7 @@ public class UserController {
     }
     @PutMapping("/{userId}/roles")
     public ApiResponse<UserResponse> assignRoles(
-            @PathVariable Long userId,
+            @PathVariable String userId,
             @RequestBody Set<Integer> roleIds) {
 
         var result = userService.assignRoles(userId, roleIds);

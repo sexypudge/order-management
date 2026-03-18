@@ -11,7 +11,10 @@ public interface UserService {
     List<UserResponse> getAllUsers();   // lấy danh sách user
     UserResponse createUser(UserRequest request);   // tạo mới user
 
-    UserResponse getUserById(Long userId);
+    UserResponse getUserById(String userId);
+
+
+
     PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest request);
-    UserResponse assignRoles(Long userId, Set<Integer> roleIds);
+    UserResponse assignRoles(String userId, Set<Integer> roleIds);
 }
