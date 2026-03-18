@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.common.enums.ErrCode;
 import org.example.ordermanagement.common.enums.OrderStatus;
+import org.example.ordermanagement.common.enums.UserStatus;
 import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.User;
@@ -41,8 +42,8 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(orderCreateRequest.getTotalAmount());
         order.setCreatedAt(LocalDateTime.now());
         order.setCreatedBy(user);
+        user.setStatus(UserStatus.INACTIVE);
 
-        order = orderRepository.save(order);
         return responseDTO(order);
     }
 

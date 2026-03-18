@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -47,16 +47,17 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @PostMapping("/{userId}/role")
-    public ApiResponse<UserResponse> assignRoles(
+    @PostMapping("/admin/{userId}/assign-role")
+    public ResponseEntity<ApiResponse<UserResponse>> assignRoles(
             @PathVariable Long userId,
             @RequestBody Set<String> roleNames
     ) {
-        return ApiResponse.<UserResponse>builder()
+        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
                 .code(1000)
                 .message("Successfully assigned roles to user!")
                 .result(userService.assignRolesToUser(userId, roleNames))
                 .build();
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/search")
@@ -66,17 +67,17 @@ public class UserController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection,
             @RequestBody(required = false) @Valid UserSearchRequest userSearchRequest
-            ){
+    ) {
         UserSearchRequest searchRequest;
-        if(userSearchRequest==null){
+        if (userSearchRequest == null) {
             searchRequest = new UserSearchRequest();
-        }else {
+        } else {
             searchRequest = userSearchRequest;
         }
-        ApiResponse<PageResponse<UserResponse>> response= ApiResponse.<PageResponse<UserResponse>>builder()
+        ApiResponse<PageResponse<UserResponse>> response = ApiResponse.<PageResponse<UserResponse>>builder()
                 .code(1000)
                 .message("Successfully listed users!")
-                .result(userService.searchUsers(page,size,sortBy,sortDirection,searchRequest))
+                .result(userService.searchUsers(page, size, sortBy, sortDirection, searchRequest))
                 .build();
         return ResponseEntity.ok(response);
     }

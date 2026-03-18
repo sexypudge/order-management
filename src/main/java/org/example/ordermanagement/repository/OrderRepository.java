@@ -18,7 +18,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findById(Long id);
 
     @Query("SELECT o FROM Order o " +
-            "LEFT JOIN o.createdBy u " +
+            "LEFT JOIN FETCH o.createdBy u " +
             "WHERE (:id IS NULL OR o.id = :id) " +
             "AND (:name IS NULL OR u.username LIKE %:name%) " +
             "AND (:status IS NULL OR o.status = :status) ")
