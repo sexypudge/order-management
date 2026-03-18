@@ -90,8 +90,9 @@ public class UserServiceImpl implements UserService {
 
         Long searchId = (request!=null) ? request.getId():null;
         String searchName = (request!=null) ? request.getName():null;
+        Integer searchRoleId = (request != null) ? request.getRoleId() : null;
 
-        Page<User> userPage = userRepository.searchUsersBasic(searchId, searchName, pageable);
+        Page<User> userPage = userRepository.searchUsersBasic(searchId, searchName,searchRoleId, pageable);
 
         // Chuyển đổi List<User> sang List<UserResponse>
         List<UserResponse> content = userPage.getContent().stream()

@@ -1,30 +1,35 @@
-package org.example.ordermanagement.domain;
+    package org.example.ordermanagement.domain;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.example.ordermanagement.common.enums.UserStatus;
-import java.util.HashSet;
-import java.util.Set;
+    import jakarta.persistence.*;
+    import lombok.*;
+    import org.example.ordermanagement.common.enums.UserStatus;
+    import java.util.HashSet;
+    import java.util.List;
+    import java.util.Set;
 
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-@Entity
-@Table(name = "users")
-@Getter @Setter
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String username;
-    private String password;
-    private String status;
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Entity
+    @Table(name = "users")
+    @Getter @Setter
+    public class User {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        private String username;
+        private String password;
+        private String status;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "users_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles;
-}
+        @ManyToMany(fetch = FetchType.EAGER)
+        @JoinTable(
+                name = "users_roles",
+                joinColumns = @JoinColumn(name = "user_id"),
+                inverseJoinColumns = @JoinColumn(name = "role_id")
+        )
+
+        private Set<Role> roles;
+
+        @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+        private List<Order> orders;
+    }

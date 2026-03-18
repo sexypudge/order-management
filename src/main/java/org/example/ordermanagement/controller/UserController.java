@@ -1,5 +1,6 @@
 package org.example.ordermanagement.controller;
 
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -61,11 +62,11 @@ public class UserController {
     }
     @PostMapping("/search")
     public ApiResponse<PageResponse<UserResponse>> searchUsers(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam (defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestBody(required = false) UserSearchRequest request) {
+            @Valid @RequestBody(required = false) UserSearchRequest request) {
 
         var result = userService.searchUsers(page, size, sortBy, sortDirection, request);
 
