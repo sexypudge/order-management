@@ -1,8 +1,10 @@
 package org.example.ordermanagement.service.impl;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.common.enums.UserStatus;
 import org.example.ordermanagement.exception.BusinessException;
+import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.UserRequest;
 import org.example.ordermanagement.model.dto.request.UserSearchRequest;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -125,15 +128,20 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
     @Override
-    public UserResponse assignRoles(String userId, Set<Integer> roleIds) {
+    @Transactional // Bắt buộc phải có để Hibernate thực hiện lệnh INSERT sau lệnh DELETE
+    public UserResponse assignRoles(String userId, Set<Long> roleIds) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("USER_NOT_EXISTED", "người dùng đã tồn tại "));
+                .orElseThrow(() -> new BusinessException("USER_NOT_EXISTED", "Người dùng không tồn tại"));
 
-        var roles = roleRepository.findAllById(roleIds);
+        // Lấy danh sách Role thực tế từ DB
+        List<Role> rolesFromDb = roleRepository.findAllById(roleIds);
 
-        // Gán Role cho User
-        user.setRoles(new HashSet<>(roles));
+        // QUAN TRỌNG: Không dùng user.setRoles(new HashSet<>(roles))
+        // Hãy dùng clear và addAll để Hibernate nhận diện đúng chu trình thay đổi
+        user.getRoles().clear();
+        user.getRoles().addAll(rolesFromDb);
 
+        // Lưu lại
         User updatedUser = userRepository.save(user);
 
         return UserResponse.builder()
@@ -141,7 +149,7 @@ public class UserServiceImpl implements UserService {
                 .username(updatedUser.getUsername())
                 .status(updatedUser.getStatus().name())
                 .roles(updatedUser.getRoles().stream()
-                        .map(role -> role.getName().toString())
+                        .map(role -> role.getName().name())
                         .collect(Collectors.toSet()))
                 .build();
     }

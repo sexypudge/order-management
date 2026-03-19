@@ -12,10 +12,12 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderRequest {
+
     @NotBlank(message = "Mã đơn hàng không được để trống")
     String orderCode;
 
     @NotNull(message = "ID người dùng không được để trống")
-    @Min(value = 1, message = "ID người dùng không hợp lệ")
     String userId;
+    @NotNull(message = "Tổng tiền không được để trống")
+    java.math.BigDecimal totalAmount;
 }

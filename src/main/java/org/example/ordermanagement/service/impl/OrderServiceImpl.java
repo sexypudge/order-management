@@ -39,9 +39,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "Không tìm thấy khách hàng này"));
 
         Order order = Order.builder()
+
                 .orderCode(request.getOrderCode())
                 .status(OrderStatus.CREATED)
                 .createdBy(user)
+                .totalAmount(request.getTotalAmount())
                 .build();
 
         order = orderRepository.save(order);

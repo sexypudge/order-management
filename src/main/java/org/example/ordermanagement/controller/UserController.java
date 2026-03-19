@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("api/users")
 @RequiredArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -74,10 +74,10 @@ public class UserController {
                 .data(result)
                 .build();
     }
-    @PutMapping("/{userId}/roles")
+    @PutMapping("admin/roles/{userId}/")
     public ApiResponse<UserResponse> assignRoles(
             @PathVariable String userId,
-            @RequestBody Set<Integer> roleIds) {
+            @RequestBody Set<Long> roleIds) {
 
         var result = userService.assignRoles(userId, roleIds);
 
@@ -86,4 +86,6 @@ public class UserController {
                 .data(result)
                 .build();
     }
+
+
 }
