@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsernameIgnoreCase(String username);
@@ -25,4 +27,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
                            @Param("name") String name,
                            @Param("role") UserRole role,
                            Pageable pageable);
+    Optional<User> findByUsernameIgnoreCase(String username);
 }
