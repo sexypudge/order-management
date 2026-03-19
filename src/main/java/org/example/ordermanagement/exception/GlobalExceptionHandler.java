@@ -12,22 +12,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public ResponseEntity<ApiResponse<Object>> handlingRuntimeException(RuntimeException exception) {
         ApiResponse<Object> apiResponse = ApiResponse.builder()
-                .code("UNCATEGORIZED_ERROR")
-                .message("Có lỗi hệ thống: " + exception.getMessage())
+                .code(String.valueOf(ErrorCode.UNCATEGORIZED_ERROR.getCode()))
+                .message(ErrorCode.UNCATEGORIZED_ERROR.getMessage())
                 .build();
 
-        return ResponseEntity.ok(apiResponse);
+        return ResponseEntity.badRequest().body(apiResponse);
     }
 
     // lỗi nghiệp vụ
     @ExceptionHandler(value = AppException.class)
     public ResponseEntity<ApiResponse<Object>> handlingAppException(AppException exception) {
+        ErrorCode errorCode = exception.getErrorCode();
+
         ApiResponse<Object> apiResponse = ApiResponse.builder()
-                .code(exception.getErrorCode())
-                .message(exception.getMessage())
+                .code(String.valueOf(errorCode.getCode()))
+                .message(errorCode.getMessage())
                 .build();
 
 
-        return ResponseEntity.ok(apiResponse);
+        return ResponseEntity
+                .status(errorCode.getStatusCode())
+                .body(apiResponse);
     }
 }

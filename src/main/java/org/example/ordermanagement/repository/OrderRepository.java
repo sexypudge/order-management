@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
+
     @Query("SELECT o FROM Order o LEFT JOIN o.user u WHERE " +
             "(:orderCode IS NULL OR o.orderCode LIKE CONCAT('%', :orderCode, '%')) AND " +
             "(:username IS NULL OR u.username LIKE CONCAT('%', :username, '%')) AND " +

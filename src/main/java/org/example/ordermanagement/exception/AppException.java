@@ -4,10 +4,12 @@ import lombok.Getter;
 
 @Getter
 public class AppException extends RuntimeException {
-    private String errorCode;
+    // 1. Đổi từ String sang ErrorCode để khớp với tham số truyền vào
+    private final ErrorCode errorCode;
 
-    public AppException(String errorCode, String message) {
-        super(message);
+    public AppException(ErrorCode errorCode) {
+        // 2. Gọi constructor của lớp cha (RuntimeException) và truyền message vào
+        super(errorCode.getMessage());
         this.errorCode = errorCode;
     }
 }

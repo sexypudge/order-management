@@ -12,6 +12,7 @@ import org.example.ordermanagement.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.dto.response.OrderResponse;
 import org.example.ordermanagement.dto.response.PageResponse;
 import org.example.ordermanagement.exception.AppException;
+import org.example.ordermanagement.exception.ErrorCode;
 import org.example.ordermanagement.repository.OrderRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.OrderService;
@@ -36,7 +37,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse createOrder(OrderRequest request) {
 
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new AppException("USER_NOT_FOUND", "Không tìm thấy khách hàng này"));
+                .orElseThrow(() -> new AppException(ErrorCode.valueOf("USER_NOT_FOUND")));
 
         Order order = Order.builder()
                 .orderCode(request.getOrderCode())
@@ -58,7 +59,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse getOrderById(Long id) {
 
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new AppException("ORDER_NOT_FOUND", "Đơn hàng không tồn tại"));
+                .orElseThrow(() -> new AppException(ErrorCode.valueOf("ORDER_NOT_FOUND")));
 
 
         return OrderResponse.builder()
@@ -90,6 +91,7 @@ public class OrderServiceImpl implements OrderService {
                         .customerName(order.getUser() != null ? order.getUser().getUsername() : "N/A")
                         .build())
                 .toList();
+
 
 
         return PageResponse.<OrderResponse>builder()

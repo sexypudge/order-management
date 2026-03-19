@@ -24,7 +24,7 @@ public class Order {
     @Enumerated(EnumType.STRING)
     OrderStatus status;
 
-    // Thiết lập mối quan hệ Many orders To One user
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // Tên cột khóa ngoại trong bảng orders
             User user;
