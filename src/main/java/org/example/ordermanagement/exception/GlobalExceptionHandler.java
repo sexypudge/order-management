@@ -14,13 +14,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(value = Exception.class)
-    public ResponseEntity<ApiResponse<?>>HandleRuntimeException(){
-        ApiResponse<?> apiResponse= new ApiResponse<>();
-        apiResponse.setCode(ErrCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrCode.UNCATEGORIZED_EXCEPTION.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-    }
+//    @ExceptionHandler(value = Exception.class)
+//    public ResponseEntity<ApiResponse<?>>HandleRuntimeException(){
+//        ApiResponse<?> apiResponse= new ApiResponse<>();
+//        apiResponse.setCode(ErrCode.UNCATEGORIZED_EXCEPTION.getCode());
+//        apiResponse.setMessage(ErrCode.UNCATEGORIZED_EXCEPTION.getMessage());
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+//    }
 
     @ExceptionHandler(value = AppException.class)
     public ResponseEntity<ApiResponse<?>>HandleAppException(AppException exception){

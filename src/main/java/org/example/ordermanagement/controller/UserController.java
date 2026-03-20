@@ -27,7 +27,7 @@ public class UserController {
 
     private final UserServiceImpl userService;
 
-    @PostMapping
+    @PostMapping("/create-user")
     public ResponseEntity<ApiResponse<UserResponse>> create(@RequestBody UserRequest userRequest) {
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
                 .code(1000)

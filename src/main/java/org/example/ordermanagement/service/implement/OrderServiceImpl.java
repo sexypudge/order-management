@@ -42,7 +42,6 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(orderCreateRequest.getTotalAmount());
         order.setCreatedAt(LocalDateTime.now());
         order.setCreatedBy(user);
-        user.setStatus(UserStatus.INACTIVE);
 
         return responseDTO(order);
     }
