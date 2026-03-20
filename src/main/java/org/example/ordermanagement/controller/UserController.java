@@ -74,12 +74,11 @@ public class UserController {
                 .data(result)
                 .build();
     }
-    @PutMapping("/{userId}/roles")
+    @PostMapping("/role/admin/assign-role")
     public ApiResponse<UserResponse> assignRoles(
-            @PathVariable Long userId,
-            @RequestBody Set<Integer> roleIds) {
+            @Valid @RequestBody AssignRoleRequest request) {
 
-        var result = userService.assignRoles(userId, roleIds);
+        var result = userService.assignRoles(request.getUserId(), request.getRoleIds());
 
         return ApiResponse.<UserResponse>builder()
                 .message("Cập nhật quyền thành công")
