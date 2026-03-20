@@ -27,11 +27,13 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/health").permitAll()
-                .requestMatchers(HttpMethod.POST, "/users").permitAll() // để tạo user trước khi login
+                .requestMatchers(HttpMethod.POST, "/users").permitAll()
+                .requestMatchers(HttpMethod.GET, "/users").permitAll()
+                .requestMatchers(HttpMethod.POST, "/users/{id}/roles").permitAll()
                 .anyRequest().authenticated()
         );
 
-        // Commit 1-2: tạm dùng Basic để test, commit 3 sẽ thay bằng JWT filter
+
         http.httpBasic(Customizer.withDefaults());
 
         return http.build();
@@ -42,7 +44,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Commit 2 sẽ dùng để authenticate trong /auth/login
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
