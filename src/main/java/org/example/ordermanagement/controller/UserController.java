@@ -1,7 +1,6 @@
 package org.example.ordermanagement.controller;
 
 import jakarta.validation.Valid;
-import org.example.ordermanagement.model.dto.request.AssignRoleRequest;
 import org.example.ordermanagement.model.dto.request.CreateUserRequest;
 import org.example.ordermanagement.model.dto.request.UserSearchRequest;
 import org.example.ordermanagement.model.dto.response.ApiResponse;
@@ -57,10 +56,5 @@ public class UserController {
         );
     }
 
-    @PostMapping("/{id}/roles")
-    public ResponseEntity<ApiResponse<UserResponse>> assignRole(@PathVariable Long id,
-                                                                @RequestBody AssignRoleRequest request) {
-        return ResponseEntity.ok(ResponseUtil.success(roleService.assignRoleToUser(id, request.getRole()))
-        );
-    }
+
 }
