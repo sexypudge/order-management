@@ -74,7 +74,7 @@ public class UserController {
                 .data(result)
                 .build();
     }
-    @PostMapping("/role/admin/assign-role")
+    @PostMapping("/api/role/admin/assign-role")
     public ApiResponse<UserResponse> assignRoles(
             @Valid @RequestBody AssignRoleRequest request) {
 
