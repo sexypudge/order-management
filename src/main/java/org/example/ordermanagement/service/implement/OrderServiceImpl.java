@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -42,6 +43,8 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(orderCreateRequest.getTotalAmount());
         order.setCreatedAt(LocalDateTime.now());
         order.setCreatedBy(user);
+
+        orderRepository.save(order);
 
         return responseDTO(order);
     }
@@ -123,13 +126,21 @@ public class OrderServiceImpl implements OrderService {
 
         return OrderResponse.builder()
                 .id(order.getId())
-                .id(order.getId())
                 .orderCode(order.getOrderCode())
                 .status(order.getStatus().name())
                 .totalAmount(order.getTotalAmount())
                 .createdAt(order.getCreatedAt())
                 .createdBy(user)
                 .build();
+    }
+    @Override
+    @Transactional
+    public boolean isOwner(Long orderId) {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
+
+        return order.getCreatedBy().getUsername().equals(currentUsername);
     }
 
 }

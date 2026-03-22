@@ -14,6 +14,7 @@ import org.example.ordermanagement.service.UserService;
 import org.example.ordermanagement.service.implement.UserServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF') or authentication.principal.id ==#id")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable Long id) {
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
                 .code(1000)

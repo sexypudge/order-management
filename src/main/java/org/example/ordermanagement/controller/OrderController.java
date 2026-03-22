@@ -13,6 +13,7 @@ import org.example.ordermanagement.service.OrderService;
 import org.example.ordermanagement.service.implement.OrderServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,6 +31,7 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF') or @orderServiceImpl.isOwner(#id)")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long id){
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)

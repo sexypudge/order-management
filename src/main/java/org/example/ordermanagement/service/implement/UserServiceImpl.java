@@ -154,4 +154,5 @@ public class UserServiceImpl implements UserService {
                 .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
                 .build();
     }
+
 }

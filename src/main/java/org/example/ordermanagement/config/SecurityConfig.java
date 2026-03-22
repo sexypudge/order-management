@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
@@ -38,7 +40,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users/create-user/**").permitAll()
                         .requestMatchers("/api/role/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/orders/**").permitAll()
+                        .requestMatchers("/api/orders/search/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers("/api/users/search/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers("/api/orders").hasAnyRole("STAFF", "ADMIN", "CUSTOMER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

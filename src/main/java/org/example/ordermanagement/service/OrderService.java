@@ -10,4 +10,5 @@ public interface OrderService {
     OrderResponse createOrder(OrderCreateRequest orderCreateRequest);
     OrderResponse getOrderById(Long id);
     PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest);
+    boolean isOwner(Long orderId);
 }
