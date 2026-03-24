@@ -6,7 +6,6 @@ import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.exception.BusinessException;
 import org.example.ordermanagement.model.domain.Order;
 
-import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.CreateOrderRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
@@ -20,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,13 +58,28 @@ public class OrderServiceImpl implements OrderService {
     }
     @Override
     public List<OrderResponse> getOrders() {
-        List<Order> orders = orderRepository.findAll();
-        List<OrderResponse> result = new ArrayList<>();
 
-        for (Order o : orders) {
-            result.add(toResponse(o));
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String username = auth.getName();
+
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        boolean isStaff = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
+
+        List<Order> orders;
+
+        if (isAdmin || isStaff) {
+            orders = orderRepository.findAll();
         }
-        return result;
+        else {
+            orders = orderRepository.findByCreatedByUsername(username);
+        }
+        return orders.stream()
+                .map(this::toResponse)
+                .toList();
     }
     @Override
     public OrderResponse getOrderById(Long id) {
@@ -164,7 +179,21 @@ public class OrderServiceImpl implements OrderService {
 
         return res;
     }
+    @Override
+    @Transactional
+    public OrderResponse assignStatusToOrder(Long orderId, OrderStatus status) {
 
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException("NOT_FOUND", "Order not found"));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new BusinessException("INVALID_REQUEST", "Cannot update cancelled order");
+        }
+        order.setStatus(status);
+        Order saved = orderRepository.save(order);
+
+        return toResponse(saved);
+    }
 
 
 }
