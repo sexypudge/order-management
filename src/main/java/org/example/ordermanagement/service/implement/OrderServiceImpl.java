@@ -142,5 +142,24 @@ public class OrderServiceImpl implements OrderService {
 
         return order.getCreatedBy().getUsername().equals(currentUsername);
     }
+    @Override
+    @Transactional
+    public OrderResponse confirmStatus(Long orderId){
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
+        order.setStatus(OrderStatus.CONFIRMED);
+        Order savedOrder = orderRepository.save(order);
+
+        return responseDTO(savedOrder);
+    }
+    @Override
+    @Transactional
+    public OrderResponse cancelStatus(Long orderId){
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
+        order.setStatus(OrderStatus.CANCELLED);
+        Order savedOrder = orderRepository.save(order);
+        return responseDTO(savedOrder);
+    }
 
 }

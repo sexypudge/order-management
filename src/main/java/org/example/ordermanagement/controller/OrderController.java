@@ -40,6 +40,26 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/confirm-orders/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<OrderResponse>> confirmOrder(@PathVariable Long id) {
+        ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
+                .code(1000)
+                .message("Order confirmed!")
+                .result(orderService.confirmStatus(id))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+    @PostMapping("/cancel-orders/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable Long id) {
+        ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
+                .code(1000)
+                .message("Order canceled!")
+                .result(orderService.cancelStatus(id))
+                .build();
+        return ResponseEntity.ok(response);
+    }
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> search(
             @RequestParam(defaultValue = "0") int page,
