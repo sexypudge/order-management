@@ -14,4 +14,5 @@ public class OrderResponse {
     String orderCode;
     OrderStatus status;
     String customerName; // Lấy từ user.username
+    private Double totalAmount;
 }

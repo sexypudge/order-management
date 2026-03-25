@@ -14,8 +14,7 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
-        // CƠ BẢN: Giả sử ông nhập admin/admin là đúng
-        // (Chưa cần check Database cho nhức đầu)
+        // chưa cần database
         if ("admin".equals(request.getUsername()) && "admin123".equals(request.getPassword())) {
             return jwtTokenProvider.generateToken(request.getUsername());
         }

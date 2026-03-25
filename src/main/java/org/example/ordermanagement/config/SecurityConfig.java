@@ -34,7 +34,13 @@
                     .authorizeHttpRequests(auth -> auth
                             .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                             .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                            // quyền của admin
                             .requestMatchers("/api/role/admin/**").hasRole("ADMIN")
+                            //  quyền của staff
+                            .requestMatchers(HttpMethod.GET, "/api/orders/all").hasAnyRole("STAFF", "ADMIN")
+                            .requestMatchers(HttpMethod.PUT, "/api/orders/status/**").hasAnyRole("STAFF", "ADMIN")
+                            // quyền của customer
+                            .requestMatchers("/api/orders/**").hasAnyRole("CUSTOMER", "ADMIN")
                             .anyRequest().authenticated()
                     )
                     .oauth2ResourceServer(oauth2 -> oauth2

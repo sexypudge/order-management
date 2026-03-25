@@ -106,4 +106,35 @@ public class OrderServiceImpl implements OrderService {
                 .sortDirection(sortDirection)
                 .build();
     }
+    @Override
+    public List<OrderResponse> getAllOrders() {
+        List<Order> orders = orderRepository.findAll();
+
+        return orders.stream()
+                .map(this::mapToOrderResponse)
+                .toList();
+    }
+    private OrderResponse mapToOrderResponse(Order order) {
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .totalAmount(order.getTotalAmount())
+                .status(order.getStatus())
+                .customerName(order.getUser() != null ? order.getUser().getUsername() : "N/A")
+                .build();
+    }
+
+    @Override
+    public OrderResponse updateOrderStatus(Long id, OrderStatus newStatus) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new AppException(ErrorCode.ORDER_CANCELLED);
+        }
+
+        order.setStatus(newStatus);
+
+        return mapToOrderResponse(orderRepository.save(order));
+    }
 }
