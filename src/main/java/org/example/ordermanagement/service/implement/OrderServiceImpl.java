@@ -103,54 +103,27 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
-    public PageResponse<OrderSearchResponse> searchOrders(OrderSearchRequest request, int page, int size, String sortBy, String sortDirection) {
-        String orderCode = null;
-        String username = null;
-        OrderStatus status = null;
-
-        if (request != null) {
-            orderCode = request.getOrderCode();
-            username = request.getUsername();
-            if (username != null && username.isBlank()) username = null;
-            String statusStr = request.getStatus();
-            if (statusStr != null && !statusStr.isBlank()) {
-                try {
-                    status = OrderStatus.valueOf(statusStr.trim().toUpperCase());
-                } catch (Exception e) {
-                    throw new BusinessException("INVALID_REQUEST", "status must be CREATED,CONFIRMED,CANCELLED");
-                }
-            }
-        }
-
-        if (page < 0) {
-            throw new BusinessException("INVALID_REQUEST", "Page must be >= 0");
-        }
-        if (sortBy == null || sortBy.isBlank()) sortBy = "orderCode";
-        if (sortDirection == null || sortDirection.isBlank()) sortDirection = "ASC";
-
+    public PageResponse<OrderSearchResponse> searchOrders(OrderSearchRequest request, int page, int size, String sortBy, String sortDirection
+    ) {
         String sortField;
         if (sortBy.equalsIgnoreCase("orderCode")) {
             sortField = "orderCode";
         } else if (sortBy.equalsIgnoreCase("username")) {
             sortField = "createdBy.username";
-        } else if (sortBy.equalsIgnoreCase("status")) {
+        } else {
             sortField = "status";
-        } else {
-            throw new BusinessException("INVALID_REQUEST", "sortBy must be orderCode, username, or status");
         }
 
-        Sort.Direction direction;
-        if (sortDirection.equalsIgnoreCase("ASC")) {
-            direction = Sort.Direction.ASC;
-        } else if (sortDirection.equalsIgnoreCase("DESC")) {
-            direction = Sort.Direction.DESC;
-        } else {
-            throw new BusinessException("INVALID_REQUEST", "sortDirection must be ASC or DESC");
-        }
-
+        Sort.Direction direction = Sort.Direction.fromString(sortDirection);
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
 
+        String orderCode = request != null ? request.getOrderCode() : null;
+        String username = request != null ? request.getUsername() : null;
+        OrderStatus status = request != null ? request.getStatus() : null;
 
+        if (username != null && username.isBlank()) {
+            username = null;
+        }
 
         Page<Order> orderPage = orderRepository.searchOrders(orderCode, username, status, pageable);
 
@@ -176,7 +149,6 @@ public class OrderServiceImpl implements OrderService {
         res.setHasPrevious(orderPage.hasPrevious());
         res.setSortBy(sortBy.toLowerCase());
         res.setSortDirection(direction.name());
-
         return res;
     }
     @Override
@@ -194,6 +166,4 @@ public class OrderServiceImpl implements OrderService {
 
         return toResponse(saved);
     }
-
-
 }
