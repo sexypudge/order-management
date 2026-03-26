@@ -88,11 +88,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderStatus searchStatus = null;
-        if (orderSearchRequest != null){
+        if (orderSearchRequest != null) {
             searchStatus = orderSearchRequest.getStatus();
         }
 
-        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus, pageable);
+        String searchOrderCode = null;
+        if (orderSearchRequest != null) {
+            searchOrderCode = orderSearchRequest.getOrderCode();
+        }
+
+        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus,searchOrderCode, pageable);
 
         return PageResponse.<OrderResponse>builder()
                 .content(orderPage.getContent().stream()
@@ -133,6 +138,7 @@ public class OrderServiceImpl implements OrderService {
                 .createdBy(user)
                 .build();
     }
+
     @Override
     @Transactional
     public boolean isOwner(Long orderId) {
@@ -142,9 +148,10 @@ public class OrderServiceImpl implements OrderService {
 
         return order.getCreatedBy().getUsername().equals(currentUsername);
     }
+
     @Override
     @Transactional
-    public OrderResponse confirmStatus(Long orderId){
+    public OrderResponse confirmStatus(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
         order.setStatus(OrderStatus.CONFIRMED);
@@ -152,9 +159,10 @@ public class OrderServiceImpl implements OrderService {
 
         return responseDTO(savedOrder);
     }
+
     @Override
     @Transactional
-    public OrderResponse cancelStatus(Long orderId){
+    public OrderResponse cancelStatus(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
         order.setStatus(OrderStatus.CANCELLED);

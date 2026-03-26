@@ -10,7 +10,9 @@ import org.example.ordermanagement.common.enums.OrderStatus;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+        @Index(name = "idx_order_code", columnList = "orderCode", unique = true),
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,6 +25,7 @@ public class Order {
     @Column(unique = true, nullable = false)
     private String orderCode;
 
+    @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
     private Long totalAmount;
@@ -30,6 +33,6 @@ public class Order {
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="created_by")
+    @JoinColumn(name = "created_by")
     private User createdBy;
 }

@@ -14,4 +14,5 @@ public class OrderSearchRequest {
     @Size(min = 1, max=255, message = "Name must be >0 and <=255!")
     private String name;
     private OrderStatus status;
+    private String orderCode;
 }
