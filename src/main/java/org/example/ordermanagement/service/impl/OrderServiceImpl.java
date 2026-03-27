@@ -35,9 +35,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse createOrder(OrderRequest request) {
+        String currentUsername = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
 
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.valueOf("USER_NOT_FOUND")));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         Order order = Order.builder()
                 .orderCode(request.getOrderCode())
@@ -51,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
                 .id(order.getId())
                 .orderCode(order.getOrderCode())
                 .status(order.getStatus())
+                .totalAmount(order.getTotalAmount())
                 .customerName(user.getUsername())
                 .build();
     }
@@ -59,9 +62,20 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse getOrderById(Long id) {
 
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.valueOf("ORDER_NOT_FOUND")));
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+// lấy thông tin người đang đăng nhập từ Token SecurityContext
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName(); //  username lấy từ JWT
 
+        // lấy danh sách Role để check xem có phải Staff/Admin không
+        boolean isAdminOrStaff = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+
+        // nếu k phải Staff/Admin VÀ đơn hàng này KHÔNG THUỘC về User hiện tại thì bị chặn
+        if (!isAdminOrStaff && !order.getUser().getUsername().equals(currentUsername)) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
         return OrderResponse.builder()
                 .id(order.getId())
                 .orderCode(order.getOrderCode())
@@ -72,14 +86,31 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest request) {
+        // 1. Lấy thông tin User đang đăng nhập
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        // Check quyền STAFF/ADMIN
+        boolean isStaffOrAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF") || a.getAuthority().equals("ROLE_ADMIN"));
+
+        String searchOrderCode = (request != null) ? request.getOrderCode() : null;
+        OrderStatus searchStatus = (request != null) ? request.getStatus() : null;
+
+        // nếu không phải STAFF, thì ép username tìm kiếm là của chính mình
+        String searchUsername;
+        if (isStaffOrAdmin) {
+            searchUsername = (request != null) ? request.getUsername() : null;
+        } else {
+            searchUsername = currentUsername;
+        }
+
         Sort sort = sortDirection.equalsIgnoreCase("ASC")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        String searchOrderCode = (request != null) ? request.getOrderCode() : null;
-        String searchUsername = (request != null) ? request.getUsername() : null;
-        OrderStatus searchStatus = (request != null) ? request.getStatus() : null;
+
 
         Page<Order> orderPage = orderRepository.searchOrders(searchOrderCode, searchUsername, searchStatus, pageable);
 
@@ -136,5 +167,22 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(newStatus);
 
         return mapToOrderResponse(orderRepository.save(order));
+    }
+    @Override
+    public List<OrderResponse> getMyOrders() {
+        // lấy username của người đang đăng nhập từ SecurityContext
+        String currentUsername = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        //  Tìm danh sách đơn hàng của User này
+
+        List<Order> orders = orderRepository.findAllByUser(user);
+
+        return orders.stream()
+                .map(this::mapToOrderResponse)
+                .toList();
     }
 }

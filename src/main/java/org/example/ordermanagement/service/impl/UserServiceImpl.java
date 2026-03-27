@@ -32,6 +32,7 @@ public class UserServiceImpl implements UserService {
     RoleRepository roleRepository;
     // nơi chứa dữ liệu thay cho database
     private List<UserResponse> storage = new ArrayList<>();
+    org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Override
     public List<UserResponse> getAllUsers() {
@@ -56,19 +57,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createUser(UserRequest request) {
-        //  kiểm tra xem username đã tồn tại chưa
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.valueOf("USER_EXISTED"));
         }
+
         List<Role> roles = roleRepository.findAllById(request.getRoleIds());
+
         User user = User.builder()
                 .username(request.getUsername())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword())) // mã hóa
                 .status("ACTIVE")
                 .roles(new HashSet<>(roles))
                 .build();
 
-        //  Lưu vào Database
         user = userRepository.save(user);
 
         return UserResponse.builder()
@@ -122,7 +123,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse assignRoles(Long userId, Set<Integer> roleIds) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.valueOf("USER_NOT_EXISTED")));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         var roles = roleRepository.findAllById(roleIds);
 

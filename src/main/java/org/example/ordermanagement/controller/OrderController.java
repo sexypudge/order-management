@@ -82,4 +82,11 @@ public class OrderController {
                 .data(result)
                 .build();
     }
+    @GetMapping("/my-orders")
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders() {
+        var result = orderService.getMyOrders();
+        return ResponseEntity.ok(ApiResponse.<List<OrderResponse>>builder()
+                .data(result)
+                .build());
+    }
 }

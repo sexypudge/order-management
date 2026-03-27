@@ -32,15 +32,24 @@
                     .csrf(AbstractHttpConfigurer::disable)
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(auth -> auth
-                            .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
-                            .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                            // quyền của admin
+                            .requestMatchers(HttpMethod.POST, "/api/auth/**", "/api/users").permitAll()
+
+                            // 2. Quyền của ADMIN (Quản lý role, hệ thống)
                             .requestMatchers("/api/role/admin/**").hasRole("ADMIN")
-                            //  quyền của staff
+
+
+                            // 3. Quyền của STAFF & ADMIN (Quản lý đơn hàng)
+                            .requestMatchers(HttpMethod.POST, "/orders").hasAnyRole("ADMIN", "STAFF")
                             .requestMatchers(HttpMethod.GET, "/api/orders/all").hasAnyRole("STAFF", "ADMIN")
-                            .requestMatchers(HttpMethod.PUT, "/api/orders/status/**").hasAnyRole("STAFF", "ADMIN")
-                            // quyền của customer
-                            .requestMatchers("/api/orders/**").hasAnyRole("CUSTOMER", "ADMIN")
+                            .requestMatchers(HttpMethod.PUT, "/api/orders/*/status").hasAnyRole("STAFF", "ADMIN")
+
+                            //  Quyền của CUSTOMER (Tạo đơn)
+                            .requestMatchers(HttpMethod.POST, "/api/orders/**").hasRole("CUSTOMER")
+                            .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").hasAnyRole("CUSTOMER")
+
+                            //  Quyền chung (Xem chi tiết, Search đơn hàng)
+                            .requestMatchers(HttpMethod.GET, "/api/orders/**").authenticated()
+
                             .anyRequest().authenticated()
                     )
                     .oauth2ResourceServer(oauth2 -> oauth2
@@ -62,7 +71,7 @@
         JwtAuthenticationConverter jwtAuthenticationConverter() {
             JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
             converter.setAuthorityPrefix("ROLE_");
-            // Quan trọng: Phải khớp với tên claim trong Token (thường là scope)
+
             converter.setAuthoritiesClaimName("scope");
 
             JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();

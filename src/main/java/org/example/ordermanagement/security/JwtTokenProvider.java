@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -16,13 +17,17 @@ public class JwtTokenProvider {
     @Value("${jwt.signerKey}")
     private String signerKey;
 
-    public String generateToken(String username) {
-        // Tạo nội dung cho Token
+    public String generateToken(org.example.ordermanagement.domain.User user) {
+        // lấy danh sách role từ db của user đó
+        String scope = user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.joining(" "));
+
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(username)
+                .subject(user.getUsername())
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()))
-                .claim("scope", "ADMIN") // Gán quyền ADMIN ở đây
+                .claim("scope", scope)
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());

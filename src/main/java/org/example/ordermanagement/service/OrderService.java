@@ -14,4 +14,5 @@ public interface OrderService {
     PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest request);
     List<OrderResponse> getAllOrders();
     OrderResponse updateOrderStatus(Long id, OrderStatus newStatus);
+    List<OrderResponse> getMyOrders();
 }
