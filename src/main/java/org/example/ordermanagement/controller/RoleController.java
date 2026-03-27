@@ -1,5 +1,6 @@
 package org.example.ordermanagement.controller;
 
+import jakarta.validation.Valid;
 import org.example.ordermanagement.model.dto.request.AssignRoleRequest;
 import org.example.ordermanagement.model.dto.request.CreateRoleRequest;
 import org.example.ordermanagement.model.dto.response.ApiResponse;
@@ -20,12 +21,12 @@ public class RoleController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<?>> createRole(@RequestBody CreateRoleRequest request) {
+    public ResponseEntity<ApiResponse<?>> createRole(@Valid @RequestBody CreateRoleRequest request) {
         return ResponseEntity.status(201)
                 .body(ResponseUtil.success(roleService.createRole(request.getName())));
     }
     @PostMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> assignRole(@PathVariable Long id,
+    public ResponseEntity<ApiResponse<UserResponse>> assignRole(@Valid @PathVariable Long id,
                                                                 @RequestBody AssignRoleRequest request) {
         return ResponseEntity.ok(ResponseUtil.success(roleService.assignRoleToUser(id, request.getRole()))
         );

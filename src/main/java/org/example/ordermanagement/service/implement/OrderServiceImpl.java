@@ -114,7 +114,9 @@ public class OrderServiceImpl implements OrderService {
             sortField = "status";
         }
 
-        Sort.Direction direction = Sort.Direction.fromString(sortDirection);
+        Sort.Direction direction = "ASC".equalsIgnoreCase(sortDirection)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
 
         String orderCode = request != null ? request.getOrderCode() : null;
