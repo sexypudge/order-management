@@ -8,7 +8,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", indexes = {
+        @Index(name = "idx_order_code", columnList = "order_code")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -34,6 +36,7 @@ public class Order {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
@@ -58,4 +61,5 @@ public class Order {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }

@@ -14,6 +14,8 @@ import org.example.ordermanagement.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("api/orders")
@@ -28,6 +30,16 @@ public class OrderController {
         return ApiResponse.<OrderResponse>builder()
                 .code("success")
                 .message("Tạo đơn hàng thành công")
+                .data(result)
+                .build();
+    }
+    @GetMapping("/my-orders")
+    public ApiResponse<List<OrderResponse>> getMyOrders() {
+        // Logic này thường sẽ lấy username từ SecurityContextHolder
+        // Sau đó gọi service để tìm các đơn có createdBy là username đó.
+        var result = orderService.getOrdersByCurrentUser();
+        return ApiResponse.<List<OrderResponse>>builder()
+                .code("SUCCESS")
                 .data(result)
                 .build();
     }
@@ -56,5 +68,18 @@ public class OrderController {
                 .code("SUCCESS")
                 .data(result)
                 .build());
+    }
+    @PutMapping("/{orderId}/status")
+    public ApiResponse<OrderResponse> updateStatus(
+            @PathVariable Long orderId,
+            @RequestParam org.example.ordermanagement.common.enums.OrderStatus status) {
+
+        var result = orderService.updateStatus(orderId, status);
+
+        return ApiResponse.<OrderResponse>builder()
+                .code("SUCCESS")
+                .message("Cập nhật trạng thái thành công")
+                .data(result)
+                .build();
     }
 }

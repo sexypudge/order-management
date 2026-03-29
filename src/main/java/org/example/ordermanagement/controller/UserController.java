@@ -74,18 +74,7 @@ public class UserController {
                 .data(result)
                 .build();
     }
-    @PutMapping("admin/roles/{userId}/")
-    public ApiResponse<UserResponse> assignRoles(
-            @PathVariable String userId,
-            @RequestBody Set<Long> roleIds) {
 
-        var result = userService.assignRoles(userId, roleIds);
-
-        return ApiResponse.<UserResponse>builder()
-                .message("Cập nhật quyền thành công")
-                .data(result)
-                .build();
-    }
 
 
 }

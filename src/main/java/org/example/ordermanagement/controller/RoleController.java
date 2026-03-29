@@ -3,6 +3,7 @@
     import lombok.AccessLevel;
     import lombok.RequiredArgsConstructor;
     import lombok.experimental.FieldDefaults;
+    import org.example.ordermanagement.model.dto.request.AssignRoleRequest;
     import org.example.ordermanagement.model.dto.response.ApiResponse;
     import org.example.ordermanagement.model.domain.Role;
     import org.example.ordermanagement.service.RoleService; // Giả định bạn có RoleService
@@ -34,15 +35,15 @@
 
         // API: Gán Role cho User (Yêu cầu bước 1)
         // URL: PUT /api/role/admin/assign-role
+        // Đổi từ @PostMapping sang @PutMapping để đúng chuẩn Update
         @PutMapping("/assign-role")
-        public ApiResponse<Object> assignRole(
-                @RequestParam String userId,
-                @RequestBody Set<Long> roleIds) {
-
-            var result = userService.assignRoles(userId, roleIds);
+        public ApiResponse<Object> assignRole(@RequestBody AssignRoleRequest request) {
+            // request.getUserId() và request.getRoleIds() lấy từ class DTO (xem Bước C)
+            var result = userService.assignRoles(request.getUserId(), request.getRoleIds());
 
             return ApiResponse.builder()
-                    .message("Gán quyền cho người dùng thành công")
+                    .code("SUCCESS")
+                    .message("Gán quyền thành công")
                     .data(result)
                     .build();
         }

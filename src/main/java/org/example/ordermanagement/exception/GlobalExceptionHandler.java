@@ -1,7 +1,10 @@
 package org.example.ordermanagement.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.example.ordermanagement.model.dto.response.ApiResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 @RestControllerAdvice
@@ -69,5 +72,13 @@ public class GlobalExceptionHandler {
                 .message("Unexpected error occurred")
                 .path(request.getRequestURI())
                 .build();
+    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldError().getDefaultMessage();
+        return ResponseEntity.badRequest().body(ApiResponse.builder()
+                .code("INVALID_INPUT")
+                .message(message)
+                .build());
     }
 }

@@ -31,15 +31,26 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // CẤU HÌNH XỬ LÝ LỖI TẠI ĐÂY
                 .exceptionHandling(exception ->
                         exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 
                 .authorizeHttpRequests(auth -> auth
+                        // 1. Công khai (Public)
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/users/admin/**").hasRole("ADMIN")
+
+                        // 2. Phân quyền ADMIN
+                        .requestMatchers("/api/users/admin/**", "/api/role/admin/**").hasRole("ADMIN")
+
+                        // 3. Phân quyền STAFF (Xem tất cả đơn, cập nhật status)
+                        .requestMatchers(HttpMethod.GET, "/api/orders/all").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/status/**").hasAnyRole("STAFF", "ADMIN")
+
+                        // 4. Phân quyền CUSTOMER (Tạo đơn, xem đơn cá nhân)
+                        // Lưu ý: Mọi user đã login đều có quyền mặc định là USER/CUSTOMER
+                        .requestMatchers(HttpMethod.POST, "/api/orders").hasAnyRole("CUSTOMER","STAFF","ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/orders/my-orders").hasRole("CUSTOMER")
+
                         .anyRequest().authenticated()
                 );
 
