@@ -11,6 +11,8 @@ import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 
 import org.example.ordermanagement.model.dto.request.UserSearchRequest;
 import org.example.ordermanagement.model.dto.response.PageResponse;
@@ -28,10 +30,11 @@ public class UserServiceImpl implements UserService {
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-
-    public UserServiceImpl(RoleRepository roleRepository, UserRepository userRepository) {
+    private final PasswordEncoder passwordEncoder;
+    public UserServiceImpl(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -59,7 +62,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(request.getPassword());
         user.setStatus(UserStatus.ACTIVE);
         user.getRoles().add(customerRole);
-
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         User saved = userRepository.save(user);
         return toResponse(saved);
     }
@@ -87,6 +90,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public PageResponse<UserSearchResponse> searchUsers(UserSearchRequest request, int page, int size, String sortBy, String sortDirection) {
+
         Long id = null;
         String name = null;
         UserRole roleEnum = null;
@@ -104,35 +108,16 @@ public class UserServiceImpl implements UserService {
                 }
             }
         }
-
-        if (page < 0) {
-            throw new BusinessException("INVALID_REQUEST", "Page must be >= 0");
-        }
-        if (sortBy == null || sortBy.isBlank()) sortBy = "id";
-        if (sortDirection == null || sortDirection.isBlank()) sortDirection = "ASC";
-
         String sortField;
-        if (sortBy.equalsIgnoreCase("id")) {
+        if ("id".equalsIgnoreCase(sortBy)) {
             sortField = "id";
-        } else if (sortBy.equalsIgnoreCase("name")) {
+        } else {
             sortField = "username";
-        } else {
-            throw new BusinessException("INVALID_REQUEST", "sortBy must be id or name");
         }
-
-        Sort.Direction direction;
-        if (sortDirection.equalsIgnoreCase("ASC")) {
-            direction = Sort.Direction.ASC;
-        } else if (sortDirection.equalsIgnoreCase("DESC")) {
-            direction = Sort.Direction.DESC;
-        } else {
-            throw new BusinessException("INVALID_REQUEST", "sortDirection must be ASC or DESC");
-        }
-
+        Sort.Direction direction = "ASC".equalsIgnoreCase(sortDirection)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-
-
-
         Page<User> userPage = userRepository.searchUsers(id, name, roleEnum, pageable);
 
         List<UserSearchResponse> content = new ArrayList<>();
@@ -143,7 +128,6 @@ public class UserServiceImpl implements UserService {
             }
             content.add(new UserSearchResponse(u.getId(), u.getUsername(), roles));
         }
-
         PageResponse<UserSearchResponse> res = new PageResponse<>();
         res.setContent(content);
         res.setPage(userPage.getNumber());
@@ -154,7 +138,6 @@ public class UserServiceImpl implements UserService {
         res.setHasPrevious(userPage.hasPrevious());
         res.setSortBy(sortBy.toLowerCase());
         res.setSortDirection(direction.name());
-
         return res;
     }
 }

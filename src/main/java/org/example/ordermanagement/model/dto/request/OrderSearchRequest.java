@@ -1,5 +1,7 @@
 package org.example.ordermanagement.model.dto.request;
 import lombok.*;
+import org.example.ordermanagement.common.enums.OrderStatus;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -7,5 +9,5 @@ import lombok.*;
 public class OrderSearchRequest {
     private String orderCode;
     private String username;
-    private String status;
+    private OrderStatus status;
 }

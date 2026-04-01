@@ -6,7 +6,6 @@ import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.exception.BusinessException;
 import org.example.ordermanagement.model.domain.Order;
 
-import org.example.ordermanagement.model.domain.Role;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.CreateOrderRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
@@ -20,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,13 +58,28 @@ public class OrderServiceImpl implements OrderService {
     }
     @Override
     public List<OrderResponse> getOrders() {
-        List<Order> orders = orderRepository.findAll();
-        List<OrderResponse> result = new ArrayList<>();
 
-        for (Order o : orders) {
-            result.add(toResponse(o));
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String username = auth.getName();
+
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        boolean isStaff = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
+
+        List<Order> orders;
+
+        if (isAdmin || isStaff) {
+            orders = orderRepository.findAll();
         }
-        return result;
+        else {
+            orders = orderRepository.findByCreatedByUsername(username);
+        }
+        return orders.stream()
+                .map(this::toResponse)
+                .toList();
     }
     @Override
     public OrderResponse getOrderById(Long id) {
@@ -88,54 +103,29 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
-    public PageResponse<OrderSearchResponse> searchOrders(OrderSearchRequest request, int page, int size, String sortBy, String sortDirection) {
-        String orderCode = null;
-        String username = null;
-        OrderStatus status = null;
-
-        if (request != null) {
-            orderCode = request.getOrderCode();
-            username = request.getUsername();
-            if (username != null && username.isBlank()) username = null;
-            String statusStr = request.getStatus();
-            if (statusStr != null && !statusStr.isBlank()) {
-                try {
-                    status = OrderStatus.valueOf(statusStr.trim().toUpperCase());
-                } catch (Exception e) {
-                    throw new BusinessException("INVALID_REQUEST", "status must be CREATED,CONFIRMED,CANCELLED");
-                }
-            }
-        }
-
-        if (page < 0) {
-            throw new BusinessException("INVALID_REQUEST", "Page must be >= 0");
-        }
-        if (sortBy == null || sortBy.isBlank()) sortBy = "orderCode";
-        if (sortDirection == null || sortDirection.isBlank()) sortDirection = "ASC";
-
+    public PageResponse<OrderSearchResponse> searchOrders(OrderSearchRequest request, int page, int size, String sortBy, String sortDirection
+    ) {
         String sortField;
         if (sortBy.equalsIgnoreCase("orderCode")) {
             sortField = "orderCode";
         } else if (sortBy.equalsIgnoreCase("username")) {
             sortField = "createdBy.username";
-        } else if (sortBy.equalsIgnoreCase("status")) {
+        } else {
             sortField = "status";
-        } else {
-            throw new BusinessException("INVALID_REQUEST", "sortBy must be orderCode, username, or status");
         }
 
-        Sort.Direction direction;
-        if (sortDirection.equalsIgnoreCase("ASC")) {
-            direction = Sort.Direction.ASC;
-        } else if (sortDirection.equalsIgnoreCase("DESC")) {
-            direction = Sort.Direction.DESC;
-        } else {
-            throw new BusinessException("INVALID_REQUEST", "sortDirection must be ASC or DESC");
-        }
-
+        Sort.Direction direction = "ASC".equalsIgnoreCase(sortDirection)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
 
+        String orderCode = request != null ? request.getOrderCode() : null;
+        String username = request != null ? request.getUsername() : null;
+        OrderStatus status = request != null ? request.getStatus() : null;
 
+        if (username != null && username.isBlank()) {
+            username = null;
+        }
 
         Page<Order> orderPage = orderRepository.searchOrders(orderCode, username, status, pageable);
 
@@ -161,10 +151,21 @@ public class OrderServiceImpl implements OrderService {
         res.setHasPrevious(orderPage.hasPrevious());
         res.setSortBy(sortBy.toLowerCase());
         res.setSortDirection(direction.name());
-
         return res;
     }
+    @Override
+    @Transactional
+    public OrderResponse assignStatusToOrder(Long orderId, OrderStatus status) {
 
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException("NOT_FOUND", "Order not found"));
 
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new BusinessException("INVALID_REQUEST", "Cannot update cancelled order");
+        }
+        order.setStatus(status);
+        Order saved = orderRepository.save(order);
 
+        return toResponse(saved);
+    }
 }
