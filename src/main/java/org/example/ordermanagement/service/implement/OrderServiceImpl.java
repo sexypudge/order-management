@@ -9,6 +9,7 @@ import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
+import org.example.ordermanagement.model.dto.request.OrderHistoryRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
@@ -168,6 +169,60 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLED);
         Order savedOrder = orderRepository.save(order);
         return responseDTO(savedOrder);
+    }
+
+    @Override
+    @Transactional
+    public PageResponse<OrderResponse> getOrderHistory(Long id, int page, int size, String sortBy, String sortDirection, OrderHistoryRequest request) {
+        if (page < 0) {
+            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
+        }
+        if (size <= 0 || size > 100) {
+            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
+        }
+
+        Sort sort = sortDirection.equalsIgnoreCase("ASC")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+
+        OrderStatus searchStatus = null;
+        if (request != null && request.getStatus() != null && !request.getStatus().isEmpty()) {
+            try {
+                searchStatus = OrderStatus.valueOf(request.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrCode.INVALID_STATUS);
+            }
+        }
+
+
+        String searchCreatedBy = (request != null) ? request.getCreatedBy() : null;
+
+        Long searchOrderId = (id != null) ? id : (request != null ? request.getOrderId() : null);
+
+
+        Page<Order> orderPage = orderRepository.searchOrderBasics(
+                searchOrderId,
+                searchCreatedBy,
+                searchStatus,
+                null,
+                pageable
+        );
+
+        return PageResponse.<OrderResponse>builder()
+                .content(orderPage.getContent().stream()
+                        .map(this::responseDTO)
+                        .toList())
+                .page(orderPage.getNumber())
+                .size(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .hasNext(orderPage.hasNext())
+                .hasPrevious(orderPage.hasPrevious())
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .build();
     }
 
 }
