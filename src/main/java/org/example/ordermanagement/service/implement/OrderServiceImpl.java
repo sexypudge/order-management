@@ -52,12 +52,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest) {
-        if (page < 0) {
-            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
-        }
-        if (size <= 0 || size > 100) {
-            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
-        }
+
 
         String actualField;
         if (sortBy.equals("name")) {
