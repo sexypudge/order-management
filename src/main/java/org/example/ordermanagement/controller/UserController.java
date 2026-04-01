@@ -1,6 +1,8 @@
 package org.example.ordermanagement.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.model.domain.User;
@@ -64,12 +66,22 @@ public class UserController {
 
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> search(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestBody(required = false) @Valid UserSearchRequest userSearchRequest
-    ) {
+            @Valid @RequestBody UserSearchRequest userSearchRequest,
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "Page must be >= 0")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 0, message = "Size must be >= 0")
+            int size,
+            @RequestParam(defaultValue = "id")
+            @Pattern(regexp = "id|name",
+                    message = "sortBy must be id or name")
+            String sortBy,
+            @RequestParam(defaultValue = "ASC")
+            @Pattern(regexp = "ASC|DESC",
+                    message = "sortDirection must be ASC or DESC")
+            String sortDirection
+    ){
         UserSearchRequest searchRequest;
         if (userSearchRequest == null) {
             searchRequest = new UserSearchRequest();
