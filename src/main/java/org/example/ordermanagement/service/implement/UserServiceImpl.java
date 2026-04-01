@@ -16,11 +16,13 @@ import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -35,6 +37,8 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @Override
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
@@ -43,8 +47,10 @@ public class UserServiceImpl implements UserService {
         }
         User user = new User();
         user.setUsername(userRequest.getUsername());
-        user.setPassword(userRequest.getPassword());
         user.setStatus(UserStatus.ACTIVE);
+
+        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
+        user.setPassword(encodedPassword);
 
         User savedUser = userRepository.save(user);
 
@@ -148,4 +154,5 @@ public class UserServiceImpl implements UserService {
                 .roles(user.getRoles().stream().map(role -> role.getName().name()).collect(Collectors.toSet()))
                 .build();
     }
+
 }

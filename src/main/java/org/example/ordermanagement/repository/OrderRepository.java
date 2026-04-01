@@ -21,9 +21,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "LEFT JOIN FETCH o.createdBy u " +
             "WHERE (:id IS NULL OR o.id = :id) " +
             "AND (:name IS NULL OR u.username LIKE %:name%) " +
-            "AND (:status IS NULL OR o.status = :status) ")
+            "AND (:status IS NULL OR o.status = :status) " +
+            "AND (:orderCode IS NULL OR o.orderCode = :orderCode) ")
+
     Page<Order> searchOrderBasics(@Param("id") Long id,
                                   @Param("name") String name,
                                   @Param("status") OrderStatus status,
+                                  @Param("orderCode") String orderCode,
                                   Pageable pageable);
 }
