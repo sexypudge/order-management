@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("api/users")
 @RequiredArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -74,16 +74,7 @@ public class UserController {
                 .data(result)
                 .build();
     }
-    @PutMapping("/{userId}/roles")
-    public ApiResponse<UserResponse> assignRoles(
-            @PathVariable String userId,
-            @RequestBody Set<Integer> roleIds) {
 
-        var result = userService.assignRoles(userId, roleIds);
 
-        return ApiResponse.<UserResponse>builder()
-                .message("Cập nhật quyền thành công")
-                .data(result)
-                .build();
-    }
+
 }

@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o LEFT JOIN o.createdBy u WHERE " +
             "(:orderCode IS NULL OR o.orderCode LIKE CONCAT('%', :orderCode, '%')) AND " +
@@ -17,4 +19,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                              @Param("username") String username,
                              @Param("status") OrderStatus status,
                              Pageable pageable);
+    List<Order> findByCreatedBy_Username(String username);
 }

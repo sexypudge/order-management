@@ -30,7 +30,8 @@ public class User {
     @Column(nullable = false)
     private UserStatus status;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    // Trong file User.java của bạn
+    @ManyToMany(fetch = FetchType.EAGER) // Sửa LAZY thành EAGER tại đây
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),

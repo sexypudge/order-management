@@ -16,5 +16,5 @@ public interface UserService {
 
 
     PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest request);
-    UserResponse assignRoles(String userId, Set<Integer> roleIds);
+    UserResponse assignRoles(String userId, Set<Long> roleIds);
 }

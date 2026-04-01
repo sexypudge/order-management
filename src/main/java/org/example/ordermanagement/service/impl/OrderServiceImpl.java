@@ -39,9 +39,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "Không tìm thấy khách hàng này"));
 
         Order order = Order.builder()
+
                 .orderCode(request.getOrderCode())
                 .status(OrderStatus.CREATED)
                 .createdBy(user)
+                .totalAmount(request.getTotalAmount())
                 .build();
 
         order = orderRepository.save(order);
@@ -54,20 +56,7 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 
-    @Override
-    public OrderResponse getOrderById(Long id) {
 
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("ORDER_NOT_FOUND", "Đơn hàng không tồn tại"));
-
-
-        return OrderResponse.builder()
-                .id(order.getId())
-                .orderCode(order.getOrderCode())
-                .status(order.getStatus())
-                .customerName(order.getCreatedBy().getUsername())
-                .build();
-    }
 
     @Override
     public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest request) {
@@ -103,5 +92,85 @@ public class OrderServiceImpl implements OrderService {
                 .sortBy(sortBy)
                 .sortDirection(sortDirection)
                 .build();
+    }
+    private String getCurrentUsername() {
+        org.springframework.security.core.Authentication authentication =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BusinessException("UNAUTHORIZED", "Bạn cần đăng nhập để thực hiện thao tác này");
+        }
+        return authentication.getName();
+    }
+    @Override
+    public OrderResponse getOrderById(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("ORDER_NOT_FOUND", "Đơn hàng không tồn tại"));
+
+        String currentUsername = getCurrentUsername();
+
+        // Lấy danh sách quyền của User hiện tại
+        var authorities = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .toList();
+
+        // Ràng buộc: Nếu KHÔNG phải Admin/Staff VÀ KHÔNG phải người tạo đơn -> Chặn
+        boolean isAdminOrStaff = authorities.contains("ADMIN") || authorities.contains("STAFF");
+        boolean isOwner = order.getCreatedBy().getUsername().equals(currentUsername);
+
+        if (!isAdminOrStaff && !isOwner) {
+            throw new BusinessException("ACCESS_DENIED", "Bạn không có quyền xem đơn hàng của người khác");
+        }
+
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .status(order.getStatus())
+                .customerName(order.getCreatedBy().getUsername())
+                .build();
+    }
+
+
+
+    // Triển khai trong OrderServiceImpl.java
+    @Override
+    @Transactional
+    public OrderResponse updateStatus(Long id, OrderStatus newStatus) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("ORDER_NOT_FOUND", "Đơn hàng không tồn tại"));
+
+        // Ràng buộc nghiệp vụ: STAFF không được sửa đơn đã CANCELLED
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new BusinessException("INVALID_STATUS_CHANGE", "Không thể cập nhật đơn hàng đã bị hủy");
+        }
+
+        order.setStatus(newStatus);
+        order = orderRepository.save(order);
+
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .status(order.getStatus())
+                .customerName(order.getCreatedBy().getUsername())
+                .build();
+    }
+    @Override
+    public List<OrderResponse> getOrdersByCurrentUser() {
+        // 1. Lấy username của người đang đăng nhập từ Security Context
+        String currentUsername = getCurrentUsername();
+
+        // 2. Tìm danh sách đơn hàng dựa trên username người tạo
+        // Giả sử bạn đã có hàm findByCreatedBy_Username trong OrderRepository
+        List<Order> orders = orderRepository.findByCreatedBy_Username(currentUsername);
+
+        // 3. Map sang OrderResponse để trả về cho Client
+        return orders.stream()
+                .map(order -> OrderResponse.builder()
+                        .id(order.getId())
+                        .orderCode(order.getOrderCode())
+                        .status(order.getStatus())
+                        .customerName(order.getCreatedBy().getUsername())
+                        .build())
+                .toList();
     }
 }
