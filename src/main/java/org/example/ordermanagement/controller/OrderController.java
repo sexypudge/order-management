@@ -81,7 +81,7 @@ public class OrderController {
         }
         ApiResponse<PageResponse<OrderResponse>> response= ApiResponse.<PageResponse<OrderResponse>>builder()
                 .code(1000)
-                .message("Successfully searched orders!")
+                .message("Successfully searched  orders!")
                 .result(orderService.searchOrders(page,size,sortBy,sortDirection,searchRequest))
                 .build();
         return ResponseEntity.ok(response);
