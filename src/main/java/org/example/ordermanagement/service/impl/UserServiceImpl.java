@@ -11,6 +11,7 @@ import org.example.ordermanagement.dto.request.UserSearchRequest;
 import org.example.ordermanagement.dto.response.PageResponse;
 import org.example.ordermanagement.dto.response.UserResponse;
 import org.example.ordermanagement.exception.AppException;
+import org.example.ordermanagement.exception.ErrorCode;
 import org.example.ordermanagement.repository.RoleRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.UserService;
@@ -31,6 +32,7 @@ public class UserServiceImpl implements UserService {
     RoleRepository roleRepository;
     // nơi chứa dữ liệu thay cho database
     private List<UserResponse> storage = new ArrayList<>();
+    org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Override
     public List<UserResponse> getAllUsers() {
@@ -41,7 +43,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse getUserById(Long id) {
         // tìm user trong db nếu không thấy thì ném lỗi
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException("USER_NOT_EXISTED", "Không tìm thấy người dùng này"));
+                .orElseThrow(() -> new AppException(ErrorCode.valueOf("USER_NOT_EXISTED")));
 
         return UserResponse.builder()
                 .id(user.getId())
@@ -55,19 +57,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createUser(UserRequest request) {
-        //  kiểm tra xem username đã tồn tại chưa
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new AppException("USER_EXISTED", "người dùng đã tồn tại ");
+            throw new AppException(ErrorCode.valueOf("USER_EXISTED"));
         }
+
         List<Role> roles = roleRepository.findAllById(request.getRoleIds());
+
         User user = User.builder()
                 .username(request.getUsername())
-                .password(request.getPassword())
+                .password(passwordEncoder.encode(request.getPassword())) // mã hóa
                 .status("ACTIVE")
                 .roles(new HashSet<>(roles))
                 .build();
 
-        //  Lưu vào Database
         user = userRepository.save(user);
 
         return UserResponse.builder()
@@ -121,7 +123,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse assignRoles(Long userId, Set<Integer> roleIds) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("USER_NOT_EXISTED", "người dùng đã tồn tại "));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         var roles = roleRepository.findAllById(roleIds);
 

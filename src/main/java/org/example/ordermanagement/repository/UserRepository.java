@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
@@ -26,4 +28,6 @@ Page<User> searchUsersBasic(@Param("id") Long id,
                             @Param("name") String name,
                             @Param("roleId") Integer roleId,
                             Pageable pageable);
+
+    Optional<User> findByUsername(String username);
 }
