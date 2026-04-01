@@ -2,6 +2,7 @@ package org.example.ordermanagement.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.aspectj.weaver.ast.Or;
 import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
@@ -14,6 +15,8 @@ import org.example.ordermanagement.service.implement.OrderServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,12 +34,13 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF') or @orderServiceImpl.isOwner(#id)")
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long id){
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long id,
+                                                               @AuthenticationPrincipal UserDetails userDetails){
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)
                 .message("Successfully get order!")
-                .result(orderService.getOrderById(id))
+                .result(orderService.getOrderById(id, String.valueOf(userDetails)))
                 .build();
         return ResponseEntity.ok(response);
     }
