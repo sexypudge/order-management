@@ -8,6 +8,7 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.nio.file.AccessDeniedException;
 import java.util.HashMap;
@@ -44,6 +45,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<?>> handleValidation(MethodArgumentNotValidException exception) {
         String enumKey = exception.getBindingResult().getFieldError().getDefaultMessage();
+
+        ApiResponse<?> apiResponse = new ApiResponse<>();
+        apiResponse.setCode(400);
+        apiResponse.setMessage(enumKey);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiResponse);
+    }
+    @ExceptionHandler(value = HandlerMethodValidationException.class)
+    public ResponseEntity<ApiResponse<?>> handleHandlerValidation(HandlerMethodValidationException exception) {
+        String enumKey = "INVALID_REQUEST";
+        var errors = exception.getAllErrors();
+        if (!errors.isEmpty()) {
+            enumKey = errors.get(0).getDefaultMessage();
+        }
 
         ApiResponse<?> apiResponse = new ApiResponse<>();
         apiResponse.setCode(400);

@@ -18,6 +18,8 @@ public enum ErrCode {
     ORDER_NOT_FOUND(1008,"Order not existed!", HttpStatus.BAD_REQUEST),
     ACCESS_DENIED(1009, "do not have permission", HttpStatus.FORBIDDEN),
     INVALID_STATUS( 1011, "Invalid order status.", HttpStatus.BAD_REQUEST);
+    CAN_NOT_UPDATE_ORDER_STATUS(1010,"Order cancelled! can not update!", HttpStatus.BAD_REQUEST);
+    ;
 
     private int code;
     private String message;

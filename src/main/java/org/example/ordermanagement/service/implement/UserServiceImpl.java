@@ -85,13 +85,6 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public PageResponse<UserResponse> searchUsers(int page, int size, String sortBy, String sortDirection, UserSearchRequest userSearchRequest) {
-        if (page < 0) {
-            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
-        }
-        if (size <= 0 || size > 100) {
-            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
-        }
-
         String actualField;
         if (sortBy.equals("name")) {
             actualField = "username";
