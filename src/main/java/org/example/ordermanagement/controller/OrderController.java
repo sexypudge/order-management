@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
 public class OrderController {
-    private final OrderServiceImpl orderService;
+    private final OrderService orderService;
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> create(@RequestBody OrderCreateRequest orderCreateRequest) {
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
@@ -90,7 +90,7 @@ public class OrderController {
     }
     @PostMapping("/{id}/history")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getOrderHistory(
+    public ResponseEntity<ApiResponse<PageResponse<OrderHistoryResponse>>> getOrderHistory(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -102,7 +102,7 @@ public class OrderController {
                 ? new OrderHistoryRequest()
                 : orderHistoryRequest;
 
-        ApiResponse<PageResponse<OrderResponse>> response = ApiResponse.<PageResponse<OrderResponse>>builder()
+        ApiResponse<PageResponse<OrderHistoryResponse>> response = ApiResponse.<PageResponse<OrderHistoryResponse>>builder()
                 .code(1000)
                 .message("Successfully retrieved order history!")
                 .result(orderService.getOrderHistory(id, page, size, sortBy, sortDirection, searchRequest))

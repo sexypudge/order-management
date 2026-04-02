@@ -7,14 +7,17 @@ import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.common.enums.UserStatus;
 import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Order;
+import org.example.ordermanagement.model.domain.OrderHistory;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
 import org.example.ordermanagement.model.dto.request.OrderHistoryRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.request.UpdateOrderStatusRequest;
+import org.example.ordermanagement.model.dto.response.OrderHistoryResponse;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
+import org.example.ordermanagement.repository.OrderHistoryRepository;
 import org.example.ordermanagement.repository.OrderRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.OrderService;
@@ -26,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,11 +37,13 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final OrderHistoryRepository orderHistoryRepository;
 
     @Override
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest orderCreateRequest) {
-        User user = userRepository.findById(orderCreateRequest.getUserId()).orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
+        User user = userRepository.findById(orderCreateRequest.getUserId()).orElseThrow(()
+                -> new AppException(ErrCode.USER_NOT_EXISTED));
 
         Order order = new Order();
         order.setOrderCode("ORD-" + System.currentTimeMillis());
@@ -93,7 +99,7 @@ public class OrderServiceImpl implements OrderService {
             searchOrderCode = orderSearchRequest.getOrderCode();
         }
 
-        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus,searchOrderCode, pageable);
+        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus, searchOrderCode, pageable);
 
         return PageResponse.<OrderResponse>builder()
                 .content(orderPage.getContent().stream()
@@ -138,22 +144,46 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+        var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
 
+        boolean isAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isStaff = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
+        boolean isCustomer = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"));
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
 
-        if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new AppException(ErrCode.CAN_NOT_UPDATE_ORDER_STATUS);
+        OrderStatus oldStatus = order.getStatus();
+        OrderStatus newStatus = request.getStatus();
+
+
+        boolean isValid = false;
+
+        if (oldStatus == OrderStatus.CREATED) {
+            if (newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.CANCELLED) {
+                isValid = true;
+            }
+        } else if (oldStatus == OrderStatus.PROCESSING) {
+            if (newStatus == OrderStatus.COMPLETED) {
+                isValid = true;
+            }
         }
-        order.setStatus(request.getStatus());
+
+        if (!isValid) {
+            throw new AppException(ErrCode.INVALID_STATUS);
+
+        }
+
+        order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
+
 
         return responseDTO(saved);
     }
 
+
     @Override
     @Transactional
-    public PageResponse<OrderResponse> getOrderHistory(Long id, int page, int size, String sortBy, String sortDirection, OrderHistoryRequest request) {
+    public PageResponse<OrderHistoryResponse> getOrderHistory(Long id, int page, int size, String sortBy, String sortDirection, OrderHistoryRequest request) {
         if (page < 0) {
             throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
         }
@@ -166,43 +196,39 @@ public class OrderServiceImpl implements OrderService {
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-
         OrderStatus searchStatus = null;
         if (request != null && request.getStatus() != null && !request.getStatus().isEmpty()) {
             try {
                 searchStatus = OrderStatus.valueOf(request.getStatus().toUpperCase());
-            } catch (IllegalArgumentException e) {
+            } catch (Exception e) {
                 throw new AppException(ErrCode.INVALID_STATUS);
             }
         }
+        String searchUpdatedBy = (request != null) ? request.getCreatedBy() : null;
 
+        Page<OrderHistory> historyPage = orderHistoryRepository.findWithFilters(id, searchStatus, searchUpdatedBy, pageable);
 
-        String searchCreatedBy = (request != null) ? request.getCreatedBy() : null;
+        List<OrderHistoryResponse> content = historyPage.getContent().stream()
+                .map(h -> OrderHistoryResponse.builder()
+                        .id(h.getId())
+                        .orderId(h.getOrder().getId())
+                        .oldStatus(h.getOldStatus() != null ? h.getOldStatus().name() : "START")
+                        .newStatus(h.getNewStatus().name())
+                        .updatedBy(h.getUpdatedBy())
+                        .updatedAt(h.getCreatedAt())
+                        .build())
+                .toList();
 
-        Long searchOrderId = (id != null) ? id : (request != null ? request.getOrderId() : null);
-
-
-        Page<Order> orderPage = orderRepository.searchOrderBasics(
-                searchOrderId,
-                searchCreatedBy,
-                searchStatus,
-                null,
-                pageable
-        );
-
-        return PageResponse.<OrderResponse>builder()
-                .content(orderPage.getContent().stream()
-                        .map(this::responseDTO)
-                        .toList())
-                .page(orderPage.getNumber())
-                .size(orderPage.getSize())
-                .totalElements(orderPage.getTotalElements())
-                .totalPages(orderPage.getTotalPages())
-                .hasNext(orderPage.hasNext())
-                .hasPrevious(orderPage.hasPrevious())
+        return PageResponse.<OrderHistoryResponse>builder()
+                .content(content)
+                .totalElements(historyPage.getTotalElements())
+                .totalPages(historyPage.getTotalPages())
+                .page(historyPage.getNumber())
+                .size(historyPage.getSize())
                 .sortBy(sortBy)
                 .sortDirection(sortDirection)
                 .build();
+
     }
 
 }
