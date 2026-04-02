@@ -88,5 +88,26 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/{id}/history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> getOrderHistory(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            @RequestBody(required = false) @Valid OrderHistoryRequest orderHistoryRequest
+    ) {
+        OrderHistoryRequest searchRequest = (orderHistoryRequest == null)
+                ? new OrderHistoryRequest()
+                : orderHistoryRequest;
 
+        ApiResponse<PageResponse<OrderResponse>> response = ApiResponse.<PageResponse<OrderResponse>>builder()
+                .code(1000)
+                .message("Successfully retrieved order history!")
+                .result(orderService.getOrderHistory(id, page, size, sortBy, sortDirection, searchRequest))
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
 }
