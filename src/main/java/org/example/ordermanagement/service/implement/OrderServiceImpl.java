@@ -138,15 +138,39 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+        var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
 
+        boolean isAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isStaff = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
+        boolean isCustomer = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"));
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
 
-        if (order.getStatus() == OrderStatus.CANCELLED) {
-            throw new AppException(ErrCode.CAN_NOT_UPDATE_ORDER_STATUS);
+        OrderStatus oldStatus = order.getStatus();
+        OrderStatus newStatus = request.getStatus();
+
+
+        boolean isValid = false;
+
+        if (oldStatus == OrderStatus.CREATED) {
+            if (newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.CANCELLED) {
+                isValid = true;
+            }
+        } else if (oldStatus == OrderStatus.PROCESSING) {
+            if (newStatus == OrderStatus.COMPLETED) {
+                isValid = true;
+            }
         }
-        order.setStatus(request.getStatus());
+
+        if (!isValid) {
+            throw new AppException(ErrCode.INVALID_STATUS_TRANSITION);
+
+        }
+
+
+        order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
+
 
         return responseDTO(saved);
     }
