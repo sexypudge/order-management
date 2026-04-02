@@ -62,6 +62,7 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findByName(roleEnum)
                 .orElseThrow(() -> new BusinessException("INVALID_REQUEST", "Role not found"));
 
+        user.getRoles().clear();
         user.getRoles().add(role);
         User saved = userRepository.save(user);
 

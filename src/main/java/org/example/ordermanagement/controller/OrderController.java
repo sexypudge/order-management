@@ -27,7 +27,7 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtil.success(orderService.createOrder(request)));
     }
-    @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ApiResponse<Object>> getOrder() {
         return ResponseEntity.ok(ResponseUtil.success(orderService.getOrders()));

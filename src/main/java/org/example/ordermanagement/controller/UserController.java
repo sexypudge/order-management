@@ -50,6 +50,7 @@ public class UserController {
             @Min(value = 0, message = "Page must be >= 0")
             int page,
             @RequestParam(defaultValue = "10")
+            @Min(value = 0, message = "Size must be >= 0")
             int size,
             @RequestParam(defaultValue = "id")
             @Pattern(regexp = "id|name",
