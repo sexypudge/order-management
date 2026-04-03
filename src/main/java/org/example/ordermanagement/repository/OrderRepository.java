@@ -31,12 +31,4 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                   Pageable pageable);
 
 
-    @Query("SELECT o FROM Order o " +
-            "WHERE (:orderId IS NULL OR o.id = :orderId) " +
-            "AND (:status IS NULL OR o.status = :status) " +
-            "AND (:createdBy IS NULL OR o.createdBy.username LIKE %:createdBy%)")
-    Page<Order> getOrderHistory(@Param("orderId") Long orderId,
-                                @Param("status") OrderStatus status,
-                                @Param("createdBy") String createdBy,
-                                Pageable pageable);
 }

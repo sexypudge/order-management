@@ -1,5 +1,6 @@
 package org.example.ordermanagement.repository;
 
+import lombok.Data;
 import org.example.ordermanagement.common.enums.UserRole;
 import org.example.ordermanagement.model.domain.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,4 +20,5 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     Set<Role> findAllByNameIn(Collection<UserRole> names);
     @Query("SELECT r FROM Role r WHERE r.name = :name")
     Optional<Role> findExistedRole(@Param("name") UserRole name);
+    Optional<Role> findByName(UserRole name);
 }
