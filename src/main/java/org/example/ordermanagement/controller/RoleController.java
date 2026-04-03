@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/role")
 @RequiredArgsConstructor
 public class RoleController {
-    private RoleServiceImpl roleService;
-    @PostMapping("/admin/create-role")
+    private final RoleServiceImpl roleService;
+    @PostMapping("/admin/create-roles")
     public ResponseEntity<ApiResponse<RoleResponse>> create(@RequestBody RoleRequest roleRequest) {
         ApiResponse<RoleResponse> response = ApiResponse.<RoleResponse>builder()
                 .code(1000)
