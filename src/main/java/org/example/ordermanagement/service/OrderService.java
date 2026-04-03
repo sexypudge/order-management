@@ -5,6 +5,7 @@ import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
 import org.example.ordermanagement.model.dto.request.OrderHistoryRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.request.UpdateOrderStatusRequest;
+import org.example.ordermanagement.model.dto.response.OrderHistoryResponse;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
@@ -14,7 +15,8 @@ public interface OrderService {
     OrderResponse getOrderById(Long id, String username);
     PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest);
 
-    PageResponse<OrderResponse> getOrderHistory(Long id, int page, int size, String sortBy, String sortDirection, OrderHistoryRequest request);
+
+    PageResponse<OrderHistoryResponse> getOrderHistory(Long id, int page, int size, String sortBy, String sortDirection, OrderHistoryRequest request);
     OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request);
 
 }

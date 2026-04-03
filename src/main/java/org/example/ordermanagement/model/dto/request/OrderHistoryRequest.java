@@ -10,6 +10,4 @@ import lombok.NoArgsConstructor;
 public class OrderHistoryRequest {
     private String status;
     private String createdBy;
-    private Long orderId;
-
 }
