@@ -19,6 +19,11 @@ public enum ErrCode {
     ACCESS_DENIED(1009, "do not have permission", HttpStatus.FORBIDDEN),
     INVALID_STATUS_TRANSITION(1012, "Invalid state conversion!", HttpStatus.BAD_REQUEST),
     INVALID_STATUS( 1011, "Invalid order status.", HttpStatus.BAD_REQUEST),
+    ORDER_COMPLETED_LOCKED(1013, "Completed order cannot be updated", HttpStatus.BAD_REQUEST),
+    ORDER_CANCELLED_CANNOT_UPDATE(1014, "Staff cannot update cancelled order", HttpStatus.BAD_REQUEST),
+    ORDER_CANCELLED_ADMIN_ONLY(1015, "Only admin can update cancelled order", HttpStatus.FORBIDDEN),
+    ORDER_CANCELLED_ONLY_PROCESSING(1016, "Cancelled order can only move to processing", HttpStatus.BAD_REQUEST),
+    CUSTOMER_CANNOT_UPDATE(1017, "Customer cannot update order", HttpStatus.FORBIDDEN),
     CAN_NOT_UPDATE_ORDER_STATUS(1010,"Order cancelled! can not update!", HttpStatus.BAD_REQUEST);
     ;
 

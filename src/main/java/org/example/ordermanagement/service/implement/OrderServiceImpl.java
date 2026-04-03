@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.ordermanagement.common.enums.ErrCode;
 import org.example.ordermanagement.common.enums.OrderStatus;
-import org.example.ordermanagement.common.enums.UserStatus;
 import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.OrderHistory;
@@ -26,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +40,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final OrderHistoryRepository orderHistoryRepository;
+    private final OrderBusinessRuleGuard orderBusinessRuleGuard;
 
     @Override
     @Transactional
@@ -161,9 +162,9 @@ public class OrderServiceImpl implements OrderService {
         var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
         log.info("START - User [{}] is updating Order ID: {} to Status: {}", currentUser, orderId, request.getStatus());
 
-        boolean isAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        boolean isStaff = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
-        boolean isCustomer = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"));
+        boolean isAdmin = hasRole("ROLE_ADMIN");
+        boolean isStaff = hasRole("ROLE_STAFF");
+        boolean isCustomer = hasRole("ROLE_CUSTOMER");
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> {
                     log.error("FAILED - Order ID: {} not found. UpdatedBy: {}", orderId, currentUser);
@@ -173,25 +174,7 @@ public class OrderServiceImpl implements OrderService {
         OrderStatus oldStatus = order.getStatus();
         OrderStatus newStatus = request.getStatus();
 
-
-        boolean isValid = false;
-
-        if (oldStatus == OrderStatus.CREATED) {
-            if (newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.CANCELLED) {
-                isValid = true;
-            }
-        } else if (oldStatus == OrderStatus.PROCESSING) {
-            if (newStatus == OrderStatus.COMPLETED) {
-                isValid = true;
-            }
-        }
-
-        if (!isValid) {
-            log.warn("INVALID_TRANSITION - User [{}] attempted illegal update for Order ID: {}. From [{}] to [{}]",
-                    currentUser, orderId, oldStatus, newStatus);
-            throw new AppException(ErrCode.INVALID_STATUS_TRANSITION);
-        }
-
+        orderBusinessRuleGuard.validateUpdate(order, newStatus, isAdmin, isStaff, isCustomer);
 
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
@@ -244,6 +227,11 @@ public class OrderServiceImpl implements OrderService {
                 .sortDirection(sortDirection)
                 .build();
 
+    }
+    private boolean hasRole(String role) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(role));
     }
 
     private void saveHistory(Order order, OrderStatus oldStatus, OrderStatus newStatus, String updatedBy) {

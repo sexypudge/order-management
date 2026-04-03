@@ -46,7 +46,7 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
     @PatchMapping("/update-order/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrder(@PathVariable Long id,
                                                                   @RequestBody UpdateOrderStatusRequest request) {
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
