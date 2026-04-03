@@ -168,8 +168,9 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+
         if (!isValid) {
-            throw new AppException(ErrCode.INVALID_STATUS);
+            throw new AppException(ErrCode.INVALID_STATUS_TRANSITION);
 
         }
 

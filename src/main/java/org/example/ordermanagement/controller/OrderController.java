@@ -23,7 +23,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
 public class OrderController {
-    private final OrderService orderService;
+    private final OrderServiceImpl orderService;
+    @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> create(@RequestBody OrderCreateRequest orderCreateRequest) {
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
