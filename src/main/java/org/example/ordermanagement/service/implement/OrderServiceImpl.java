@@ -168,11 +168,11 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-
         if (!isValid) {
             throw new AppException(ErrCode.INVALID_STATUS_TRANSITION);
 
         }
+
 
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
