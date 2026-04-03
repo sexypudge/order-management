@@ -31,5 +31,5 @@ public class OrderHistory {
     private OrderStatus newStatus;
 
     private String updatedBy;
-    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

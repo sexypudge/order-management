@@ -2,6 +2,7 @@ package org.example.ordermanagement.service.implement;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.ordermanagement.common.enums.ErrCode;
 import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.common.enums.UserStatus;
@@ -32,6 +33,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -42,19 +44,30 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest orderCreateRequest) {
+
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("START - User [{}] is creating a new order", currentUser);
+
         User user = userRepository.findById(orderCreateRequest.getUserId()).orElseThrow(()
                 -> new AppException(ErrCode.USER_NOT_EXISTED));
+        try {
+            Order order = new Order();
+            order.setOrderCode("ORD-" + System.currentTimeMillis());
+            order.setStatus(OrderStatus.CREATED);
+            order.setTotalAmount(orderCreateRequest.getTotalAmount());
+            order.setCreatedAt(LocalDateTime.now());
+            order.setCreatedBy(user);
 
-        Order order = new Order();
-        order.setOrderCode("ORD-" + System.currentTimeMillis());
-        order.setStatus(OrderStatus.CREATED);
-        order.setTotalAmount(orderCreateRequest.getTotalAmount());
-        order.setCreatedAt(LocalDateTime.now());
-        order.setCreatedBy(user);
+            orderRepository.save(order);
+            saveHistory(order, null, OrderStatus.CREATED, currentUser);
+            log.info("SUCCESS - Order created successfully. ID: {}, Code: {}, CreatedBy: {}",
+                    order.getId(), order.getOrderCode(), currentUser);
 
-        orderRepository.save(order);
-
-        return responseDTO(order);
+            return responseDTO(order);
+        } catch (Exception e) {
+            log.error("ERROR - Failed to create order for user [{}]. Reason: {}", currentUser, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
@@ -144,13 +157,18 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
         var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        log.info("START - User [{}] is updating Order ID: {} to Status: {}", currentUser, orderId, request.getStatus());
 
         boolean isAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         boolean isStaff = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
         boolean isCustomer = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"));
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.error("FAILED - Order ID: {} not found. UpdatedBy: {}", orderId, currentUser);
+                    return new AppException(ErrCode.ORDER_NOT_FOUND);
+                });
 
         OrderStatus oldStatus = order.getStatus();
         OrderStatus newStatus = request.getStatus();
@@ -169,15 +187,17 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (!isValid) {
+            log.warn("INVALID_TRANSITION - User [{}] attempted illegal update for Order ID: {}. From [{}] to [{}]",
+                    currentUser, orderId, oldStatus, newStatus);
             throw new AppException(ErrCode.INVALID_STATUS_TRANSITION);
-
         }
 
 
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
 
-
+        saveHistory(order, oldStatus, newStatus, currentUser);
+        log.info("SUCCESS - Order ID: {} updated from [{}] to [{}] by User: {}", orderId, oldStatus, newStatus, currentUser);
         return responseDTO(saved);
     }
 
@@ -185,12 +205,6 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public PageResponse<OrderHistoryResponse> getOrderHistory(Long id, int page, int size, String sortBy, String sortDirection, OrderHistoryRequest request) {
-        if (page < 0) {
-            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
-        }
-        if (size <= 0 || size > 100) {
-            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
-        }
 
         Sort sort = sortDirection.equalsIgnoreCase("ASC")
                 ? Sort.by(sortBy).ascending()
@@ -216,7 +230,7 @@ public class OrderServiceImpl implements OrderService {
                         .oldStatus(h.getOldStatus() != null ? h.getOldStatus().name() : "START")
                         .newStatus(h.getNewStatus().name())
                         .updatedBy(h.getUpdatedBy())
-                        .updatedAt(h.getCreatedAt())
+                        .updatedAt(h.getUpdatedAt())
                         .build())
                 .toList();
 
@@ -230,6 +244,17 @@ public class OrderServiceImpl implements OrderService {
                 .sortDirection(sortDirection)
                 .build();
 
+    }
+
+    private void saveHistory(Order order, OrderStatus oldStatus, OrderStatus newStatus, String updatedBy) {
+        OrderHistory history = OrderHistory.builder()
+                .order(order)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .updatedBy(updatedBy != null ? updatedBy : "UNKNOWN")
+                .updatedAt(LocalDateTime.now())
+                .build();
+        orderHistoryRepository.save(history);
     }
 
 }
