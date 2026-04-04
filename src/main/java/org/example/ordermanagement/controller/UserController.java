@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserServiceImpl userService;
-
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF','CUSTOMER')")
     @PostMapping("/create-user")
     public ResponseEntity<ApiResponse<UserResponse>> create(@RequestBody UserRequest userRequest) {
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
@@ -48,7 +48,7 @@ public class UserController {
                 .build();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/{userId}/assign-role")
     public ResponseEntity<ApiResponse<UserResponse>> assignRoles(
             @PathVariable Long userId,
@@ -61,7 +61,7 @@ public class UserController {
                 .build();
         return ResponseEntity.ok(response);
     }
-
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> search(
             @RequestParam(defaultValue = "0") int page,
