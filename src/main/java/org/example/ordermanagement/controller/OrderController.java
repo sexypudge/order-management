@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderServiceImpl orderService;
+    @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> create(@RequestBody OrderCreateRequest orderCreateRequest) {
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
@@ -60,6 +61,7 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok(response);
     }
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','CUSTOMER')")
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> search(
             @RequestParam(defaultValue = "0") int page,
