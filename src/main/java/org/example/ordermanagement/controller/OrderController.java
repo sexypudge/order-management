@@ -4,10 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.weaver.ast.Or;
 import org.example.ordermanagement.model.domain.Order;
-import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
-import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
-import org.example.ordermanagement.model.dto.request.RoleRequest;
-import org.example.ordermanagement.model.dto.request.UserSearchRequest;
+import org.example.ordermanagement.model.dto.request.*;
 import org.example.ordermanagement.model.dto.response.*;
 import org.example.ordermanagement.service.OrderService;
 import org.example.ordermanagement.service.implement.OrderServiceImpl;
@@ -41,26 +38,8 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok(response);
     }
-    @PostMapping("/confirm-orders/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
-    public ResponseEntity<ApiResponse<OrderResponse>> confirmOrder(@PathVariable Long id) {
-        ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
-                .code(1000)
-                .message("Order confirmed!")
-                .result(orderService.confirmStatus(id))
-                .build();
-        return ResponseEntity.ok(response);
-    }
-    @PostMapping("/cancel-orders/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable Long id) {
-        ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
-                .code(1000)
-                .message("Order canceled!")
-                .result(orderService.cancelStatus(id))
-                .build();
-        return ResponseEntity.ok(response);
-    }
+
+
     @PreAuthorize("hasAnyRole('STAFF','ADMIN','CUSTOMER')")
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> search(
@@ -80,6 +59,17 @@ public class OrderController {
                 .code(1000)
                 .message("Successfully searched orders!")
                 .result(orderService.searchOrders(page,size,sortBy,sortDirection,searchRequest))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+    @PatchMapping("/update-order/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<OrderResponse>> updateOrder(@PathVariable Long id,
+                                                                  @RequestBody UpdateOrderStatusRequest request) {
+        ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
+                .code(1000)
+                .message("Order updated!")
+                .result(orderService.updateOrderStatus(id, request))
                 .build();
         return ResponseEntity.ok(response);
     }
