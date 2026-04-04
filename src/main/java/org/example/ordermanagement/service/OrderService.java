@@ -2,6 +2,7 @@ package org.example.ordermanagement.service;
 
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
+import org.example.ordermanagement.model.dto.request.UpdateOrderStatusRequest;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
@@ -11,7 +12,7 @@ public interface OrderService {
     OrderResponse getOrderById(Long id);
     PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest);
     boolean isOwner(Long orderId);
-    OrderResponse confirmStatus(Long orderId);
-    OrderResponse cancelStatus(Long orderId);
+    OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request);
+
 
 }
