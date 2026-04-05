@@ -1,6 +1,8 @@
 package org.example.ordermanagement.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.example.ordermanagement.model.domain.User;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserServiceImpl userService;
+
     @PreAuthorize("hasAnyRole('ADMIN','STAFF','CUSTOMER')")
     @PostMapping("/create-user")
     public ResponseEntity<ApiResponse<UserResponse>> create(@RequestBody UserRequest userRequest) {
@@ -48,6 +51,7 @@ public class UserController {
                 .build();
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/{userId}/assign-role")
     public ResponseEntity<ApiResponse<UserResponse>> assignRoles(
@@ -61,14 +65,25 @@ public class UserController {
                 .build();
         return ResponseEntity.ok(response);
     }
+
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> search(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestBody(required = false) @Valid UserSearchRequest userSearchRequest
+            @Valid @RequestBody UserSearchRequest userSearchRequest,
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "Page must be >= 0")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 0, message = "Size must be >= 0")
+            int size,
+            @RequestParam(defaultValue = "id")
+            @Pattern(regexp = "id|name",
+                    message = "sortBy must be id or name")
+            String sortBy,
+            @RequestParam(defaultValue = "ASC")
+            @Pattern(regexp = "ASC|DESC",
+                    message = "sortDirection must be ASC or DESC")
+            String sortDirection
     ) {
         UserSearchRequest searchRequest;
         if (userSearchRequest == null) {
