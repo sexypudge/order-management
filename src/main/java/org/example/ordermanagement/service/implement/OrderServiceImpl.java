@@ -159,6 +159,22 @@ public class OrderServiceImpl implements OrderService {
 
         OrderStatus oldStatus = order.getStatus();
         OrderStatus newStatus = request.getStatus();
+        boolean isValid = false;
+
+        if (oldStatus == OrderStatus.CREATED) {
+            if (newStatus == OrderStatus.PROCESSING || newStatus == OrderStatus.CANCELLED) {
+                isValid = true;
+            }
+        } else if (oldStatus == OrderStatus.PROCESSING) {
+            if (newStatus == OrderStatus.COMPLETED) {
+                isValid = true;
+            }
+        }
+
+        if (!isValid) {
+            throw new AppException(ErrCode.INVALID_STATUS_TRANSITION);
+
+        }
 
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
