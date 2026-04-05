@@ -1,6 +1,8 @@
 package org.example.ordermanagement.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.weaver.ast.Or;
 import org.example.ordermanagement.model.domain.Order;
@@ -11,6 +13,7 @@ import org.example.ordermanagement.service.implement.OrderServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,12 +32,13 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF') or @orderServiceImpl.isOwner(#id)")
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long id){
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long id,
+                                                               @AuthenticationPrincipal String username){
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)
                 .message("Successfully get order!")
-                .result(orderService.getOrderById(id))
+                .result(orderService.getOrderById(id, username))
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -43,12 +47,24 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('STAFF','ADMIN','CUSTOMER')")
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> search(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestBody(required = false) @Valid OrderSearchRequest orderSearchRequest
-            ){
+            @Valid @RequestBody OrderSearchRequest orderSearchRequest,
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "Page must be >= 0")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "Size must be >= 1")
+            int size,
+            @RequestParam(defaultValue = "orderCode")
+            @Pattern(regexp = "orderCode|name|status|id",
+                    message = "sortBy must be orderCode, username, or status"
+            )
+            String sortBy,
+            @RequestParam(defaultValue = "ASC")
+            @Pattern(regexp = "ASC|DESC",
+                    message = "sortDirection must be ASC or DESC"
+            )
+            String sortDirection
+    ){
         OrderSearchRequest searchRequest;
         if(orderSearchRequest==null){
             searchRequest = new OrderSearchRequest();

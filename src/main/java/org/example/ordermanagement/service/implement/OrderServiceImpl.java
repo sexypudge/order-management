@@ -54,12 +54,6 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest) {
-        if (page < 0) {
-            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
-        }
-        if (size <= 0 || size > 100) {
-            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
-        }
 
         String actualField;
         if (sortBy.equals("name")) {
@@ -118,7 +112,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse getOrderById(Long id) {
+    public OrderResponse getOrderById(Long id, String username) {
         Order order = orderRepository.findById(id).orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
         return responseDTO(order);
     }
@@ -141,15 +135,6 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 
-    @Override
-    @Transactional
-    public boolean isOwner(Long orderId) {
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
-
-        return order.getCreatedBy().getUsername().equals(currentUsername);
-    }
     @Override
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
