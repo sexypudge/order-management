@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -138,20 +139,26 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
         var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-
+        boolean isAdmin = hasRole("ROLE_ADMIN");
+        boolean isStaff = hasRole("ROLE_STAFF");
+        boolean isCustomer = hasRole("ROLE_CUSTOMER");
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
 
         OrderStatus oldStatus = order.getStatus();
         OrderStatus newStatus = request.getStatus();
-
+        boolean isValid = false;
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
 
 
         return responseDTO(saved);
     }
-
+    private boolean hasRole(String role) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(role));
+    }
 
 
 }
