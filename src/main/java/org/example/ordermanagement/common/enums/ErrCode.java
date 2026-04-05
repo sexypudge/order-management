@@ -16,8 +16,8 @@ public enum ErrCode {
     INVALID_PAGE_NUMBER(1006, "Page number must be zero or greater",HttpStatus.BAD_REQUEST),
     INVALID_PAGE_SIZE(1007, "Page size must be between 1 and 100", HttpStatus.BAD_REQUEST),
     ORDER_NOT_FOUND(1008,"Order not existed!", HttpStatus.BAD_REQUEST),
-    INVALID_STATUS_TRANSITION(1012, "Invalid state conversion!", HttpStatus.BAD_REQUEST),
-    ACCESS_DENIED(1009, "do not have permission", HttpStatus.FORBIDDEN);
+    ACCESS_DENIED(1009, "do not have permission", HttpStatus.FORBIDDEN),
+    INVALID_STATUS_TRANSITION(1012, "Invalid state conversion!", HttpStatus.BAD_REQUEST);
 
     private int code;
     private String message;
