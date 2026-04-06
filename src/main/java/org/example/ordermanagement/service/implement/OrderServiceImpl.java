@@ -11,8 +11,10 @@ import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.OrderHistory;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
+import org.example.ordermanagement.model.dto.request.OrderHistoryRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.request.UpdateOrderStatusRequest;
+import org.example.ordermanagement.model.dto.response.OrderHistoryResponse;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
@@ -29,6 +31,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 @Slf4j
 @Service
