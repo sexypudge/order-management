@@ -2,6 +2,7 @@ package org.example.ordermanagement.service.implement;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.ordermanagement.common.enums.ErrCode;
 import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.common.enums.UserStatus;
@@ -32,7 +33,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -43,18 +44,29 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest orderCreateRequest) {
-        User user = userRepository.findById(orderCreateRequest.getUserId()).orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("START - User [{}] is creating a new order", currentUser);
 
-        Order order = new Order();
-        order.setOrderCode("ORD-" + System.currentTimeMillis());
-        order.setStatus(OrderStatus.CREATED);
-        order.setTotalAmount(orderCreateRequest.getTotalAmount());
-        order.setCreatedAt(LocalDateTime.now());
-        order.setCreatedBy(user);
+        User user = userRepository.findById(orderCreateRequest.getUserId()).orElseThrow(()
+                -> new AppException(ErrCode.USER_NOT_EXISTED));
+        try {
+            Order order = new Order();
+            order.setOrderCode("ORD-" + System.currentTimeMillis());
+            order.setStatus(OrderStatus.CREATED);
+            order.setTotalAmount(orderCreateRequest.getTotalAmount());
+            order.setCreatedAt(LocalDateTime.now());
+            order.setCreatedBy(user);
 
-        orderRepository.save(order);
+            orderRepository.save(order);
+            saveHistory(order, null, OrderStatus.CREATED, currentUser);
+            log.info("SUCCESS - Order created successfully. ID: {}, Code: {}, CreatedBy: {}",
+                    order.getId(), order.getOrderCode(), currentUser);
 
-        return responseDTO(order);
+            return responseDTO(order);
+        } catch (Exception e) {
+            log.error("ERROR - Failed to create order for user [{}]. Reason: {}", currentUser, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
@@ -144,27 +156,44 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
         var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        log.info("START - User [{}] is updating Order ID: {} to Status: {}", currentUser, orderId, request.getStatus());
+
         boolean isAdmin = hasRole("ROLE_ADMIN");
         boolean isStaff = hasRole("ROLE_STAFF");
         boolean isCustomer = hasRole("ROLE_CUSTOMER");
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
+                .orElseThrow(() ->{
+                    log.error("FAILED - Order ID: {} not found. UpdatedBy: {}", orderId, currentUser);
+                    return new AppException(ErrCode.ORDER_NOT_FOUND);
+                });
 
         OrderStatus oldStatus = order.getStatus();
         OrderStatus newStatus = request.getStatus();
-        boolean isValid = false;
+
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
 
-
+        saveHistory(order, oldStatus, newStatus, currentUser);
+        log.error("FAILED - Order ID: {} not found. UpdatedBy: {}", orderId, currentUser);
         return responseDTO(saved);
     }
+
     private boolean hasRole(String role) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(role));
     }
 
-
+    private void saveHistory(Order order, OrderStatus oldStatus, OrderStatus newStatus, String updatedBy) {
+        OrderHistory history = OrderHistory.builder()
+                .order(order)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .updatedBy(updatedBy != null ? updatedBy : "UNKNOWN")
+                .updatedAt(LocalDateTime.now())
+                .build();
+        orderHistoryRepository.save(history);
     }
+}
