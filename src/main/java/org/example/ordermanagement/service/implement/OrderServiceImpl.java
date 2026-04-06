@@ -7,13 +7,17 @@ import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.common.enums.UserStatus;
 import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Order;
+import org.example.ordermanagement.model.domain.OrderHistory;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
+import org.example.ordermanagement.model.dto.request.OrderHistoryRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.request.UpdateOrderStatusRequest;
+import org.example.ordermanagement.model.dto.response.OrderHistoryResponse;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
+import org.example.ordermanagement.repository.OrderHistoryRepository;
 import org.example.ordermanagement.repository.OrderRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.OrderService;
@@ -26,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +38,7 @@ import java.util.stream.Collectors;
 public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final OrderHistoryRepository orderHistoryRepository;
 
     @Override
     @Transactional
@@ -161,4 +167,4 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-}
+    }

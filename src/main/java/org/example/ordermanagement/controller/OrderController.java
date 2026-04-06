@@ -10,6 +10,9 @@ import org.example.ordermanagement.model.dto.request.*;
 import org.example.ordermanagement.model.dto.response.*;
 import org.example.ordermanagement.service.OrderService;
 import org.example.ordermanagement.service.implement.OrderServiceImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -89,5 +92,20 @@ public class OrderController {
                 .build();
         return ResponseEntity.ok(response);
     }
-
+//    @GetMapping("/{id}/history")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<PageResponse<OrderHistoryResponse>> getHistory(
+//            @PathVariable Long id,
+//            @RequestParam(required = false) String status,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "updatedAt,desc") String sort) {
+//
+//
+//        String[] sortParams = sort.split(",");
+//        Sort sortOrder = Sort.by(sortParams[1].equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortParams[0]);
+//        Pageable pageable = PageRequest.of(page, size, sortOrder);
+//
+//        return ResponseEntity.ok(orderService.getOrderHistory(id, status, pageable));
+//    }
 }
