@@ -196,4 +196,47 @@ public class OrderServiceImpl implements OrderService {
                 .build();
         orderHistoryRepository.save(history);
     }
+
+    @Override
+    @Transactional
+    public PageResponse<OrderHistoryResponse> getOrderHistory(Long orderId, OrderHistoryRequest request, Pageable pageable) {
+
+        OrderStatus statusEnum = null;
+        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+            try {
+                statusEnum = OrderStatus.valueOf(request.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid status in request: {}", request.getStatus());
+            }
+        }
+
+
+        Page<OrderHistory> historyPage = orderHistoryRepository.findWithFilters(
+                orderId,
+                statusEnum,
+                request.getUpdatedBy(),
+                request.getCreatedBy(),
+                pageable
+        );
+
+
+        return PageResponse.<OrderHistoryResponse>builder()
+                .content(historyPage.getContent().stream()
+                        .map(history -> OrderHistoryResponse.builder()
+                                .id(history.getId())
+                                .orderId(history.getOrder().getId())
+                                .oldStatus(history.getOldStatus() != null ? history.getOldStatus().name() : null)
+                                .newStatus(history.getNewStatus() != null ? history.getNewStatus().name() : null)
+                                .updatedBy(history.getUpdatedBy())
+                                .updatedAt(history.getUpdatedAt())
+                                .build())
+                        .toList())
+                .page(historyPage.getNumber())
+                .size(historyPage.getSize())
+                .totalElements(historyPage.getTotalElements())
+                .totalPages(historyPage.getTotalPages())
+                .hasNext(historyPage.hasNext())
+                .hasPrevious(historyPage.hasPrevious())
+                .build();
+    }
 }

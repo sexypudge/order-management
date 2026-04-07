@@ -85,27 +85,28 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrder(@PathVariable Long id,
                                                                   @RequestBody UpdateOrderStatusRequest request) {
-        ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
+         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)
                 .message("Order updated!")
                 .result(orderService.updateOrderStatus(id, request))
                 .build();
         return ResponseEntity.ok(response);
+
     }
-//    @GetMapping("/{id}/history")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<PageResponse<OrderHistoryResponse>> getHistory(
-//            @PathVariable Long id,
-//            @RequestParam(required = false) String status,
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "10") int size,
-//            @RequestParam(defaultValue = "updatedAt,desc") String sort) {
-//
-//
-//        String[] sortParams = sort.split(",");
-//        Sort sortOrder = Sort.by(sortParams[1].equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortParams[0]);
-//        Pageable pageable = PageRequest.of(page, size, sortOrder);
-//
-//        return ResponseEntity.ok(orderService.getOrderHistory(id, status, pageable));
-//    }
+    @PostMapping("/{id}/history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PageResponse<OrderHistoryResponse>> getHistory(
+            @PathVariable @Min(value = 1, message = "ID đơn hàng phải lớn hơn 0") Long id,
+            @Valid @RequestBody OrderHistoryRequest request,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "updatedAt,desc") String sort) {
+
+
+        String[] sortParams = sort.split(",");
+        Sort sortOrder = Sort.by(sortParams[1].equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortParams[0]);
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+        return ResponseEntity.ok(orderService.getOrderHistory(id, request, pageable));
+    }
 }
