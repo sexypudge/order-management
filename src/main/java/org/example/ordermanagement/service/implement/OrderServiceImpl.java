@@ -108,7 +108,17 @@ public class OrderServiceImpl implements OrderService {
             searchOrderCode = orderSearchRequest.getOrderCode();
         }
 
-        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus,searchOrderCode, pageable);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUser = auth.getName();
+        boolean isPrivileged = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+
+        Page<Order> orderPage;
+        if (isPrivileged) {
+            orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus, searchOrderCode, pageable);
+        } else {
+            orderPage = orderRepository.searchOrderForCustomer(searchId, searchStatus, searchOrderCode, currentUser, pageable);
+        }
 
         return PageResponse.<OrderResponse>builder()
                 .content(orderPage.getContent().stream()
@@ -173,7 +183,7 @@ public class OrderServiceImpl implements OrderService {
         Order saved = orderRepository.save(order);
 
         saveHistory(order, oldStatus, newStatus, currentUser);
-        log.error("FAILED - Order ID: {} not found. UpdatedBy: {}", orderId, currentUser);
+        log.info("SUCCESS - Order ID: {} updated from [{}] to [{}] by User: {}", orderId, oldStatus, newStatus, currentUser);
         return responseDTO(saved);
     }
 

@@ -30,7 +30,6 @@ public class UserController {
 
     private final UserServiceImpl userService;
 
-    @PreAuthorize("hasAnyRole('ADMIN','STAFF','CUSTOMER')")
     @PostMapping("/create-user")
     public ResponseEntity<ApiResponse<UserResponse>> create(@RequestBody UserRequest userRequest) {
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
