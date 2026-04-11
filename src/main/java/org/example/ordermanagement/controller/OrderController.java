@@ -16,7 +16,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,10 +29,13 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> create(@RequestBody OrderCreateRequest orderCreateRequest) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = auth.getName();
+
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)
                 .message("Successfully created order!")
-                .result(orderService.createOrder(orderCreateRequest))
+                .result(orderService.createOrder(orderCreateRequest, currentUsername))
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -59,7 +64,7 @@ public class OrderController {
             int size,
             @RequestParam(defaultValue = "orderCode")
             @Pattern(regexp = "orderCode|name|status|id",
-                    message = "sortBy must be orderCode, username, or status"
+                    message = "sortBy must be orderCode, username, status or id"
             )
             String sortBy,
             @RequestParam(defaultValue = "ASC")
@@ -96,18 +101,11 @@ public class OrderController {
     @PostMapping("/{id}/history")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageResponse<OrderHistoryResponse>> getHistory(
-            @PathVariable @Min(value = 1, message = "Order ID must be >=0") Long id,
+            @PathVariable @Min(value = 1, message = "The order ID must be greater than 0.") Long id,
             @Valid @RequestBody OrderHistoryRequest request,
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = "page must be >=0")
-            int page,
-            @RequestParam(defaultValue = "10")
-            @Min(value = 1, message = "size must be >=1")
-            int size,
-            @RequestParam(defaultValue = "ASC")
-            @Pattern(regexp = "ASC|DESC",
-            message = "sortDirection must be ASC or DESC")
-            String sort) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "updatedAt,desc") String sort) {
 
 
         String[] sortParams = sort.split(",");
