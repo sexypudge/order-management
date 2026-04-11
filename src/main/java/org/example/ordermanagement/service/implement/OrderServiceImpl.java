@@ -43,12 +43,13 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse createOrder(OrderCreateRequest orderCreateRequest) {
+    public OrderResponse createOrder(OrderCreateRequest orderCreateRequest, String username) {
         String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("START - User [{}] is creating a new order", currentUser);
 
-        User user = userRepository.findById(orderCreateRequest.getUserId()).orElseThrow(()
-                -> new AppException(ErrCode.USER_NOT_EXISTED));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         try {
             Order order = new Order();
             order.setOrderCode("ORD-" + System.currentTimeMillis());
