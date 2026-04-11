@@ -11,7 +11,7 @@ import org.example.ordermanagement.model.dto.response.UserResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface OrderService {
-    OrderResponse createOrder(OrderCreateRequest orderCreateRequest);
+    OrderResponse createOrder(OrderCreateRequest orderCreateRequest, String username);
     OrderResponse getOrderById(Long id, String username);
     PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest);
     OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request);
