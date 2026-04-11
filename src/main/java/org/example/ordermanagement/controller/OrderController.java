@@ -101,19 +101,11 @@ public class OrderController {
     @PostMapping("/{id}/history")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageResponse<OrderHistoryResponse>> getHistory(
-            @PathVariable @Min(value = 1, message = "Order Id must be >= 0") Long id,
+            @PathVariable @Min(value = 1, message = "The order ID must be greater than 0.") Long id,
             @Valid @RequestBody OrderHistoryRequest request,
-            @RequestParam(defaultValue = "0")
-            @Min(value = 0, message = "Page must be >= 0")
-            int page,
-            @RequestParam(defaultValue = "10")
-            @Min(value = 1, message = "Size must be >= 1")
-            int size,
-            @RequestParam(defaultValue = "ASC")
-            @Pattern(regexp = "ASC|DESC",
-                    message = "sortDirection must be ASC or DESC"
-            )
-            String sort)  {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "updatedAt,desc") String sort) {
 
 
         String[] sortParams = sort.split(",");
