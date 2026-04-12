@@ -12,10 +12,6 @@ public class OrderBusinessRuleGuard {
     public void validateUpdate(Order order, OrderStatus newStatus,
                                boolean isAdmin, boolean isStaff, boolean isCustomer) {
 
-        if (isCustomer) {
-            throw new AppException(ErrCode.CUSTOMER_CANNOT_UPDATE);
-        }
-
         if (!isAdmin && !isStaff) {
             throw new AppException(ErrCode.ACCESS_DENIED);
         }
@@ -37,6 +33,7 @@ public class OrderBusinessRuleGuard {
             if (newStatus != OrderStatus.PROCESSING) {
                 throw new AppException(ErrCode.ORDER_CANCELLED_ONLY_PROCESSING);
             }
+            return;
         }
 
         ensureValidTransition(oldStatus, newStatus, isAdmin);
