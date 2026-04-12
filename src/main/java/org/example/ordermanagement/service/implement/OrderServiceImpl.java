@@ -40,6 +40,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final OrderHistoryRepository orderHistoryRepository;
+    private final OrderBusinessRuleGuard orderBusinessRuleGuard;
 
     @Override
     @Transactional
@@ -182,7 +183,7 @@ public class OrderServiceImpl implements OrderService {
 
         OrderStatus oldStatus = order.getStatus();
         OrderStatus newStatus = request.getStatus();
-
+        orderBusinessRuleGuard.validateUpdate(order, newStatus, isAdmin, isStaff, isCustomer);
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
 

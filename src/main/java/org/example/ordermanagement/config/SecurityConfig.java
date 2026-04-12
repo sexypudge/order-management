@@ -39,7 +39,6 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/create-user/**").permitAll()
                         .requestMatchers("/api/role/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/role/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
