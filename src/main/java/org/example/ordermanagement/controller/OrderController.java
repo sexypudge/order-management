@@ -1,6 +1,8 @@
 package org.example.ordermanagement.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.weaver.ast.Or;
 import org.example.ordermanagement.model.domain.Order;
@@ -8,9 +10,15 @@ import org.example.ordermanagement.model.dto.request.*;
 import org.example.ordermanagement.model.dto.response.*;
 import org.example.ordermanagement.service.OrderService;
 import org.example.ordermanagement.service.implement.OrderServiceImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,20 +29,24 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('CUSTOMER','ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> create(@RequestBody OrderCreateRequest orderCreateRequest) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = auth.getName();
+
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)
                 .message("Successfully created order!")
-                .result(orderService.createOrder(orderCreateRequest))
+                .result(orderService.createOrder(orderCreateRequest, currentUsername))
                 .build();
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF') or @orderServiceImpl.isOwner(#id)")
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long id){
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long id,
+                                                               @AuthenticationPrincipal String username){
         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)
                 .message("Successfully get order!")
-                .result(orderService.getOrderById(id))
+                .result(orderService.getOrderById(id, username))
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -43,12 +55,24 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('STAFF','ADMIN','CUSTOMER')")
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<PageResponse<OrderResponse>>> search(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestBody(required = false) @Valid OrderSearchRequest orderSearchRequest
-            ){
+            @Valid @RequestBody OrderSearchRequest orderSearchRequest,
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0, message = "Page must be >= 0")
+            int page,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "Size must be >= 1")
+            int size,
+            @RequestParam(defaultValue = "orderCode")
+            @Pattern(regexp = "orderCode|name|status|id",
+                    message = "sortBy must be orderCode, username, status or id"
+            )
+            String sortBy,
+            @RequestParam(defaultValue = "ASC")
+            @Pattern(regexp = "ASC|DESC",
+                    message = "sortDirection must be ASC or DESC"
+            )
+            String sortDirection
+    ){
         OrderSearchRequest searchRequest;
         if(orderSearchRequest==null){
             searchRequest = new OrderSearchRequest();
@@ -66,12 +90,30 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrder(@PathVariable Long id,
                                                                   @RequestBody UpdateOrderStatusRequest request) {
-        ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
+         ApiResponse<OrderResponse> response = ApiResponse.<OrderResponse>builder()
                 .code(1000)
                 .message("Order updated!")
                 .result(orderService.updateOrderStatus(id, request))
                 .build();
         return ResponseEntity.ok(response);
-    }
 
+    }
+    @PostMapping("/{id}/history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PageResponse<OrderHistoryResponse>> getHistory(
+            @PathVariable @Min(value = 1, message = "The order ID must be greater than 0.") Long id,
+            @Valid @RequestBody OrderHistoryRequest request,
+            @RequestParam(defaultValue = "0")
+            @Min(value = 0,message ="page must be >=0") int page,
+            @RequestParam(defaultValue = "10")
+            @Min(value = 1, message = "size must be >=1") int size,
+            @RequestParam(defaultValue = "updatedAt,desc") String sort) {
+
+
+        String[] sortParams = sort.split(",");
+        Sort sortOrder = Sort.by(sortParams[1].equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortParams[0]);
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+        return ResponseEntity.ok(orderService.getOrderHistory(id, request, pageable));
+    }
 }

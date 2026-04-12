@@ -2,18 +2,23 @@ package org.example.ordermanagement.service.implement;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.ordermanagement.common.enums.ErrCode;
 import org.example.ordermanagement.common.enums.OrderStatus;
 import org.example.ordermanagement.common.enums.UserStatus;
 import org.example.ordermanagement.exception.AppException;
 import org.example.ordermanagement.model.domain.Order;
+import org.example.ordermanagement.model.domain.OrderHistory;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.OrderCreateRequest;
+import org.example.ordermanagement.model.dto.request.OrderHistoryRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.request.UpdateOrderStatusRequest;
+import org.example.ordermanagement.model.dto.response.OrderHistoryResponse;
 import org.example.ordermanagement.model.dto.response.OrderResponse;
 import org.example.ordermanagement.model.dto.response.PageResponse;
 import org.example.ordermanagement.model.dto.response.UserResponse;
+import org.example.ordermanagement.repository.OrderHistoryRepository;
 import org.example.ordermanagement.repository.OrderRepository;
 import org.example.ordermanagement.repository.UserRepository;
 import org.example.ordermanagement.service.OrderService;
@@ -26,40 +31,48 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final OrderHistoryRepository orderHistoryRepository;
 
     @Override
     @Transactional
-    public OrderResponse createOrder(OrderCreateRequest orderCreateRequest) {
-        User user = userRepository.findById(orderCreateRequest.getUserId()).orElseThrow(() -> new AppException(ErrCode.USER_NOT_EXISTED));
+    public OrderResponse createOrder(OrderCreateRequest orderCreateRequest, String username) {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("START - User [{}] is creating a new order", currentUser);
 
-        Order order = new Order();
-        order.setOrderCode("ORD-" + System.currentTimeMillis());
-        order.setStatus(OrderStatus.CREATED);
-        order.setTotalAmount(orderCreateRequest.getTotalAmount());
-        order.setCreatedAt(LocalDateTime.now());
-        order.setCreatedBy(user);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        orderRepository.save(order);
+        try {
+            Order order = new Order();
+            order.setOrderCode("ORD-" + System.currentTimeMillis());
+            order.setStatus(OrderStatus.CREATED);
+            order.setTotalAmount(orderCreateRequest.getTotalAmount());
+            order.setCreatedAt(LocalDateTime.now());
+            order.setCreatedBy(user);
 
-        return responseDTO(order);
+            orderRepository.save(order);
+            saveHistory(order, null, OrderStatus.CREATED, currentUser);
+            log.info("SUCCESS - Order created successfully. ID: {}, Code: {}, CreatedBy: {}",
+                    order.getId(), order.getOrderCode(), currentUser);
+
+            return responseDTO(order);
+        } catch (Exception e) {
+            log.error("ERROR - Failed to create order for user [{}]. Reason: {}", currentUser, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     @Transactional
     public PageResponse<OrderResponse> searchOrders(int page, int size, String sortBy, String sortDirection, OrderSearchRequest orderSearchRequest) {
-        if (page < 0) {
-            throw new AppException(ErrCode.INVALID_PAGE_NUMBER);
-        }
-        if (size <= 0 || size > 100) {
-            throw new AppException(ErrCode.INVALID_PAGE_SIZE);
-        }
 
         String actualField;
         if (sortBy.equals("name")) {
@@ -99,7 +112,17 @@ public class OrderServiceImpl implements OrderService {
             searchOrderCode = orderSearchRequest.getOrderCode();
         }
 
-        Page<Order> orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus,searchOrderCode, pageable);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentUser = auth.getName();
+        boolean isPrivileged = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_STAFF"));
+
+        Page<Order> orderPage;
+        if (isPrivileged) {
+            orderPage = orderRepository.searchOrderBasics(searchId, searchName, searchStatus, searchOrderCode, pageable);
+        } else {
+            orderPage = orderRepository.searchOrderForCustomer(searchId, searchStatus, searchOrderCode, currentUser, pageable);
+        }
 
         return PageResponse.<OrderResponse>builder()
                 .content(orderPage.getContent().stream()
@@ -118,7 +141,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public OrderResponse getOrderById(Long id) {
+    public OrderResponse getOrderById(Long id, String username) {
         Order order = orderRepository.findById(id).orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
         return responseDTO(order);
     }
@@ -143,37 +166,87 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public boolean isOwner(Long orderId) {
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
-
-        return order.getCreatedBy().getUsername().equals(currentUsername);
-    }
-    @Override
-    @Transactional
     public OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request) {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
         var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        log.info("START - User [{}] is updating Order ID: {} to Status: {}", currentUser, orderId, request.getStatus());
+
         boolean isAdmin = hasRole("ROLE_ADMIN");
         boolean isStaff = hasRole("ROLE_STAFF");
         boolean isCustomer = hasRole("ROLE_CUSTOMER");
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrCode.ORDER_NOT_FOUND));
+                .orElseThrow(() ->{
+                    log.error("FAILED - Order ID: {} not found. UpdatedBy: {}", orderId, currentUser);
+                    return new AppException(ErrCode.ORDER_NOT_FOUND);
+                });
 
         OrderStatus oldStatus = order.getStatus();
         OrderStatus newStatus = request.getStatus();
-        boolean isValid = false;
+
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
 
-
+        saveHistory(order, oldStatus, newStatus, currentUser);
+        log.info("SUCCESS - Order ID: {} updated from [{}] to [{}] by User: {}", orderId, oldStatus, newStatus, currentUser);
         return responseDTO(saved);
     }
+
     private boolean hasRole(String role) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
         return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(role));
     }
 
+    private void saveHistory(Order order, OrderStatus oldStatus, OrderStatus newStatus, String updatedBy) {
+        OrderHistory history = OrderHistory.builder()
+                .order(order)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .updatedBy(updatedBy != null ? updatedBy : "UNKNOWN")
+                .updatedAt(LocalDateTime.now())
+                .build();
+        orderHistoryRepository.save(history);
+    }
 
+    @Override
+    @Transactional
+    public PageResponse<OrderHistoryResponse> getOrderHistory(Long orderId, OrderHistoryRequest request, Pageable pageable) {
+
+        OrderStatus statusEnum = null;
+        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+            try {
+                statusEnum = OrderStatus.valueOf(request.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid status in request: {}", request.getStatus());
+            }
+        }
+
+        Page<OrderHistory> historyPage = orderHistoryRepository.findWithFilters(
+                orderId,
+                statusEnum,
+                request.getUpdatedBy(),
+                request.getCreatedBy(),
+                pageable
+        );
+
+
+        return PageResponse.<OrderHistoryResponse>builder()
+                .content(historyPage.getContent().stream()
+                        .map(history -> OrderHistoryResponse.builder()
+                                .id(history.getId())
+                                .orderId(history.getOrder().getId())
+                                .oldStatus(history.getOldStatus() != null ? history.getOldStatus().name() : null)
+                                .newStatus(history.getNewStatus() != null ? history.getNewStatus().name() : null)
+                                .updatedBy(history.getUpdatedBy())
+                                .updatedAt(history.getUpdatedAt())
+                                .build())
+                        .toList())
+                .page(historyPage.getNumber())
+                .size(historyPage.getSize())
+                .totalElements(historyPage.getTotalElements())
+                .totalPages(historyPage.getTotalPages())
+                .hasNext(historyPage.hasNext())
+                .hasPrevious(historyPage.hasPrevious())
+                .build();
+    }
 }
