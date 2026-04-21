@@ -7,6 +7,7 @@ import org.example.ordermanagement.model.domain.Order;
 import org.example.ordermanagement.model.domain.OrderHistory;
 import org.example.ordermanagement.model.domain.User;
 import org.example.ordermanagement.model.dto.request.CreateOrderRequest;
+import org.example.ordermanagement.model.dto.request.OrderHistorySearchRequest;
 import org.example.ordermanagement.model.dto.request.OrderSearchRequest;
 import org.example.ordermanagement.model.dto.response.*;
 import org.example.ordermanagement.repository.OrderHistoryRepository;
@@ -46,8 +47,6 @@ public class OrderServiceImpl implements OrderService {
         if (orderRepository.existsByOrderCodeIgnoreCase(request.getOrderCode())) {
             throw new BusinessException("ORDER_CODE_EXISTS", "Order code already exists");
         }
-
-        // lấy user hiện tại từ SecurityContext
         String currentUsername = currentUsername();
         if (currentUsername == null) {
             throw new BusinessException("UNAUTHORIZED", "Unauthorized");
@@ -82,65 +81,53 @@ public class OrderServiceImpl implements OrderService {
 
         return toResponse(saved);
     }
-
-    @Override
-    public List<OrderResponse> getOrders() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
-            throw new BusinessException("UNAUTHORIZED", "Unauthorized");
-        }
-
-        String username = auth.getName();
-
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
-        boolean isStaff = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
-
-        List<Order> orders;
-
-        if (isAdmin || isStaff) {
-            orders = orderRepository.findAll();
-        } else {
-            // CUSTOMER: chỉ xem order của mình
-            orders = orderRepository.findByCreatedByUsername(username);
-        }
-
-        return orders.stream().map(this::toResponse).toList();
-    }
-
-    @Override
-    public OrderResponse getOrderById(Long id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
-            throw new BusinessException("UNAUTHORIZED", "Unauthorized");
-        }
-        Optional<Order> orderOpt = orderRepository.findById(id);
-        if (orderOpt.isEmpty()) {
-            throw new BusinessException("ORDER_NOT_FOUND", "Order not found");
-        }
-        Order order = orderOpt.get();
-        if (hasRole("ROLE_CUSTOMER")) {
-            String username = auth.getName();
-            if (order.getCreatedBy() == null || order.getCreatedBy().getUsername() == null
-                    || !order.getCreatedBy().getUsername().equalsIgnoreCase(username)) {
-                throw new AccessDeniedException("CUSTOMER cannot view other user's order");
-            }
-        }
-        return toResponse(order);
-    }
-    private OrderResponse toResponse(Order order) {
-        User u = order.getCreatedBy();
-        return new OrderResponse(
-                order.getId(),
-                order.getOrderCode(),
-                order.getStatus(),
-                order.getTotalAmount(),
-                order.getCreatedAt(),
-                new UserOrderResponse(u.getId(), u.getUsername())
-        );
-    }
+//
+//    @Override
+//    public List<OrderResponse> getOrders() {
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        if (auth == null) {
+//            throw new BusinessException("UNAUTHORIZED", "Unauthorized");
+//        }
+//
+//        String username = auth.getName();
+//
+//        boolean isAdmin = auth.getAuthorities().stream()
+//                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+//
+//        boolean isStaff = auth.getAuthorities().stream()
+//                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"));
+//
+//        List<Order> orders;
+//
+//        if (isAdmin || isStaff) {
+//            orders = orderRepository.findAll();
+//        } else {
+//            orders = orderRepository.findByCreatedByUsername(username);
+//        }
+//
+//        return orders.stream().map(this::toResponse).toList();
+//    }
+//
+//    @Override
+//    public OrderResponse getOrderById(Long id) {
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        if (auth == null) {
+//            throw new BusinessException("UNAUTHORIZED", "Unauthorized");
+//        }
+//        Optional<Order> orderOpt = orderRepository.findById(id);
+//        if (orderOpt.isEmpty()) {
+//            throw new BusinessException("ORDER_NOT_FOUND", "Order not found");
+//        }
+//        Order order = orderOpt.get();
+//        if (hasRole("ROLE_CUSTOMER")) {
+//            String username = auth.getName();
+//            if (order.getCreatedBy() == null || order.getCreatedBy().getUsername() == null
+//                    || !order.getCreatedBy().getUsername().equalsIgnoreCase(username)) {
+//                throw new AccessDeniedException("CUSTOMER cannot view other user's order");
+//            }
+//        }
+//        return toResponse(order);
+//    }
     @Override
     public PageResponse<OrderSearchResponse> searchOrders(OrderSearchRequest request,
                                                           int page,
@@ -199,7 +186,66 @@ public class OrderServiceImpl implements OrderService {
         res.setSortDirection(direction.name());
         return res;
     }
+    @Override
+    public PageResponse<OrderHistoryResponse> getOrderHistory(Long orderId,
+                                                              OrderHistorySearchRequest request,
+                                                              int page,
+                                                              int size,
+                                                              String sortBy,
+                                                              String sortDirection) {
+        if (!orderRepository.existsById(orderId)) {
+            throw new BusinessException("ORDER_NOT_FOUND", "Order not found");
+        }
+        String sortField;
+        if (sortBy.equalsIgnoreCase("updatedAt")) {
+            sortField = "updatedAt";
+        } else if (sortBy.equalsIgnoreCase("newStatus")) {
+            sortField = "newStatus";
+        } else if (sortBy.equalsIgnoreCase("oldStatus")) {
+            sortField = "oldStatus";
+        } else {
+            sortField = "updatedBy";
+        }
 
+        Sort.Direction direction = "ASC".equalsIgnoreCase(sortDirection)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+
+        OrderStatus status = request != null ? request.getStatus() : null;
+        String updatedBy = request != null ? request.getUpdatedBy() : null;
+
+        if (updatedBy != null && updatedBy.isBlank()) updatedBy = null;
+
+        Page<OrderHistory> historyPage = orderHistoryRepository.searchHistory(
+                orderId, status, updatedBy, pageable
+        );
+
+        List<OrderHistoryResponse> content = new ArrayList<>();
+        for (OrderHistory h : historyPage.getContent()) {
+            content.add(new OrderHistoryResponse(
+                    h.getId(),
+                    h.getOrderId(),
+                    h.getOldStatus(),
+                    h.getNewStatus(),
+                    h.getUpdatedBy(),
+                    h.getUpdatedAt()
+            ));
+        }
+
+        PageResponse<OrderHistoryResponse> res = new PageResponse<>();
+        res.setContent(content);
+        res.setPage(historyPage.getNumber());
+        res.setSize(historyPage.getSize());
+        res.setTotalElements(historyPage.getTotalElements());
+        res.setTotalPages(historyPage.getTotalPages());
+        res.setHasNext(historyPage.hasNext());
+        res.setHasPrevious(historyPage.hasPrevious());
+        res.setSortBy(sortBy.toLowerCase());
+        res.setSortDirection(direction.name());
+        return res;
+    }
     @Override
     @Transactional
     public OrderResponse assignStatusToOrder(Long orderId, OrderStatus newStatus) {
@@ -225,6 +271,17 @@ public class OrderServiceImpl implements OrderService {
                 saved.getId(), oldStatus, newStatus, updatedBy);
 
         return toResponse(saved);
+    }
+    private OrderResponse toResponse(Order order) {
+        User u = order.getCreatedBy();
+        return new OrderResponse(
+                order.getId(),
+                order.getOrderCode(),
+                order.getStatus(),
+                order.getTotalAmount(),
+                order.getCreatedAt(),
+                new UserOrderResponse(u.getId(), u.getUsername())
+        );
     }
     private void saveHistory(Long orderId, OrderStatus oldStatus, OrderStatus newStatus, String updatedBy) {
         if (updatedBy == null) updatedBy = "UNKNOWN";
