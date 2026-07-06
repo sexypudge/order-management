@@ -25,7 +25,7 @@ public class RoleController {
         return ResponseEntity.status(201)
                 .body(ResponseUtil.success(roleService.createRole(request.getName())));
     }
-    @PostMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> assignRole(@Valid @PathVariable Long id,
                                                                 @RequestBody AssignRoleRequest request) {
         return ResponseEntity.ok(ResponseUtil.success(roleService.assignRoleToUser(id, request.getRole()))
